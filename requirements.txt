@@ -2,4 +2,4 @@ requests==2.31.0
 python-dotenv==1.0.1
 eth-account==0.13.3
 eth-utils==5.0.0
-genlayer-test==0.1.0b1
+genlayer-test==0.1.1
