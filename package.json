@@ -2,6 +2,6 @@
   "name": "genlayer-project",
   "type": "module",
   "devDependencies": {
-    "genlayer-js": "^0.6.0"
+    "genlayer-js": "^0.9.1"
   }
 }
