@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "genlayer-js": "^0.6.4",
+    "genlayer-js": "^0.11.0",
     "lucide-vue-next": "^0.446.0",
     "vue": "^3.4.37"
   },

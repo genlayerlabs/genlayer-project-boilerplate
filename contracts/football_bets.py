@@ -101,7 +101,7 @@ This result should be perfectly parsable by a JSON parser without errors.
         bet.real_winner = str(bet_status["winner"])
         bet.real_score = bet_status["score"]
 
-        if bet.real_winner == bet.predicted_winner:
+        if f"team-{bet.real_winner}" == bet.predicted_winner:
             if gl.message.sender_address not in self.points:
                 self.points[gl.message.sender_address] = 0
             self.points[gl.message.sender_address] += 1

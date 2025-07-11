@@ -21,6 +21,7 @@ export default async function main(client: GenLayerClient<any>) {
       code: contractCode,
       args: [],
     });
+    console.log("🚀 ~ main ~ deployTransaction:", deployTransaction);
 
     const receipt = await client.waitForTransactionReceipt({
       hash: deployTransaction as TransactionHash,
