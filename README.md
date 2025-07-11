@@ -17,26 +17,22 @@ This project includes the boilerplate code for a GenLayer use case implementatio
 
 ## 🛠️ Requirements
 - A running GenLayer Studio (Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or work with the hosted version of [GenLayer Studio](https://studio.genlayer.com/)). If you are working locally, this repository code does not need to be located in the same directory as the Genlayer Studio.
+- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed. To install or update the GenLayer CLI run `npm install -g genlayer`
 
 ## 🚀 Steps to run this example
 
-### 1. Configure environment
-   Rename the `.env.example` file to `.env`, then fill in the values for your configuration. The provided values are the standard values for a tipical GenLayer Studio deployed locally.
+### 1. Deploy the contract
+   Deploy the contract from `/contracts/football_bets.py` using the GenLayer CLI:
+   1. Choose the network that you want to use (studionet, localnet, or tesnet-*): `genlayer network`
+   2. Execute the deploy command `genlayer deploy`. This command is going to execute the deploy script located in `/deploy/deployScript.ts`
 
-### 2. Deploy the contract
-   Deploy the contract from `/contracts/football_bets.py` using the Studio's UI:
-   1. Open the GenLayer Studio interface in your web browser (usually at http://localhost:8080).
-   2. Create a new file in the "Contracts" section and paste the content of `/contracts/football_bets.py` (the content is different than the existing contract from the examples).
-   3. Navigate to the "Run and Debug" section.
-   4. Follow the on-screen instructions to complete the deployment process.
-
-### 3. Setup the frontend environment
+### 2. Setup the frontend environment
   1. All the content of the dApp is located in the `/app` folder.
-  2. Rename the `.env.example` file in the `/app` folder to `.env`.
+  2. Copy the `.env.example` file in the `app` folder and rename it to `.env`, then fill in the values for your configuration. The provided VITE_STUDIO_URL value is the backend of the hosted GenLayer Studio.
   3. Add the deployed contract address to the `/app/.env` under the variable `VITE_CONTRACT_ADDRESS`
 
 ### 4. Run the frontend Vue app
-   Ensure your GenLayer Studio is running, and execute the following commands in your terminal:
+   Execute the following commands in your terminal:
    ```shell
    cd app
    npm install
