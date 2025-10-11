@@ -5,23 +5,15 @@
         <h1 class="text-3xl font-bold text-gray-900">GenLayer Football Bets</h1>
       </div>
       <div class="max-w-7xl py-6 px-4 sm:px-6 lg:px-8 text-right">
-        <div v-if="!userAddress">
-          <button
-            @click="createUserAccount"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Create Account
-          </button>
-        </div>
-        <div v-else>
+        <div v-if="userAddress">
           <p class="text-lg">Your address: <Address :address="userAddress" /></p>
           <p class="text-lg">Your points: {{ userPoints }}</p>
-          <button
-            @click="disconnectUserAccount"
-            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Disconnect
-          </button>
+        </div>
+        <div v-else>
+          <p class="text-lg text-gray-600">Please connect your wallet to start betting</p>
+          <p class="text-xs text-gray-500 mt-1">
+            You can browse bets and leaderboard without a wallet. Connect to create or resolve.
+          </p>
         </div>
       </div>
     </header>
@@ -123,13 +115,31 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div v-if="resolvingBet !== bet.id">
+                      <!-- DEBUG: Log bet data -->
+                      <div v-if="bet.owner === userAddress" style="display: none;">
+                        {{ console.log("DEBUG: Bet owner matches userAddress:", bet.owner, "===", userAddress) }}
+                      </div>
+                      <div v-if="!bet.has_resolved" style="display: none;">
+                        {{ console.log("DEBUG: Bet not resolved:", bet.has_resolved) }}
+                      </div>
+                      <div v-if="bet.owner === userAddress && !bet.has_resolved" style="display: none;">
+                        {{ console.log("DEBUG: Showing resolve button for bet:", bet.id) }}
+                      </div>
+                      
                       <button
                         v-if="bet.owner === userAddress && !bet.has_resolved"
-                        @click="resolveBet(bet.id)"
-                        class="text-indigo-600 hover:text-indigo-900"
+                        :disabled="!isConnected"
+                        @click="onResolve(bet.id)"
+                        class="text-indigo-600 hover:text-indigo-900 disabled:text-gray-400 disabled:cursor-not-allowed"
                       >
                         Resolve
                       </button>
+                      <span v-else-if="bet.owner !== userAddress" class="text-gray-400">
+                        Not your bet
+                      </span>
+                      <span v-else-if="bet.has_resolved" class="text-green-600">
+                        Already resolved
+                      </span>
                     </div>
                     <div v-else>Resolving bet</div>
                   </td>
@@ -190,35 +200,39 @@
         <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
           <h3 class="text-lg font-medium leading-6 text-gray-900 mb-2">Create Bet</h3>
           <input
-            v-model="gameDate"
+            v-model="form.date"
             type="date"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2"
             placeholder="Game Date (YYYY-MM-DD)"
           />
+          <p v-if="formErrors.date" class="text-red-500 text-xs mb-2">{{ formErrors.date }}</p>
           <input
-            v-model="team1"
+            v-model="form.team1"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2"
             placeholder="Team 1"
           />
+          <p v-if="formErrors.team1" class="text-red-500 text-xs mb-2">{{ formErrors.team1 }}</p>
           <input
-            v-model="team2"
+            v-model="form.team2"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2"
             placeholder="Team 2"
           />
+          <p v-if="formErrors.team2" class="text-red-500 text-xs mb-2">{{ formErrors.team2 }}</p>
           <select
-            v-model="predictedWinner"
+            v-model="form.predicted"
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 mb-2"
           >
             <option value="" disabled selected>Select Predicted Winner</option>
-            <option value="0">Draw</option>
             <option value="1">Team 1</option>
             <option value="2">Team 2</option>
           </select>
+          <p v-if="formErrors.predicted" class="text-red-500 text-xs mb-2">{{ formErrors.predicted }}</p>
           <div class="mt-4">
             <div v-if="!creatingBet">
               <button
-                @click="createBet"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
+                :disabled="!isConnected"
+                @click="submitCreate"
+                class="bg-blue-500 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded mr-2"
               >
                 Create
               </button>
@@ -237,93 +251,140 @@
       </div>
     </main>
   </div>
-
-  <div class="flex items-center justify-center h-screen">
-    <div class="spinner">Loading...</div>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { account, createAccount, removeAccount } from "../services/genlayer";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
+import { getAccount, onAccountChanged } from "../services/genlayer";
 import FootballBets from "../logic/FootballBets";
+import { validateBet, computeBetId } from "../lib/betValidation";
 import Address from "./Address.vue";
+
 // State
-const gameDate = ref("");
-const team1 = ref("");
-const team2 = ref("");
+const form = ref({ date: "", team1: "", team2: "", predicted: "" });
+const formErrors = ref({});
 const creatingBet = ref(false);
 const resolvingBet = ref(0);
-const predictedWinner = ref("");
-const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS;
+const contractAddress = import.meta.env.VITE_CONTRACT_ADDRESS || "0x2146690DCB6b857e375cA51D449e4400570e7c76";
 const studioUrl = import.meta.env.VITE_STUDIO_URL;
-const footballBets = new FootballBets(contractAddress, account, studioUrl);
-const userAccount = ref(account);
+
+// Initialize FootballBets with dynamic client
+let fb = null;
+const userAccount = ref(getAccount());
 const userPoints = ref(0);
 const userAddress = computed(() => userAccount.value?.address);
 const bets = ref([]);
 const leaderboard = ref([]);
 const showCreateModal = ref(false);
+const isConnected = computed(() => !!userAccount.value);
 
-// Methods
-const createUserAccount = async () => {
-  userAccount.value = createAccount();
-  footballBets.updateAccount(userAccount.value);  
-  userPoints.value = 0;
-};
-
-const disconnectUserAccount = async () => {
-  userAccount.value = null;
-  removeAccount();
-  userPoints.value = 0;
-};
+// Subscribe to account changes and auto-refresh data
 
 const openCreateModal = () => {
   showCreateModal.value = true;
 };
 
-const loadBets = async () => {
-  const allBets = await footballBets.getBets();
-  bets.value = allBets;
-};
-
-const loadLeaderboard = async () => {
-  leaderboard.value = await footballBets.getLeaderboard();
-};
-
-const refreshPlayerPoints = async () => {
-  userPoints.value = await footballBets.getPlayerPoints(userAddress.value);
-};
-
-const createBet = async () => {
-  if (gameDate.value && team1.value && team2.value && predictedWinner.value) {
-    creatingBet.value = true;
-    await footballBets.createBet(gameDate.value, team1.value, team2.value, predictedWinner.value);
-    await loadBets();
-    // Reset form fields
-    creatingBet.value = false;
-    gameDate.value = "";
-    team1.value = "";
-    team2.value = "";
-    predictedWinner.value = "";
-    showCreateModal.value = false;
+const refreshAll = async () => {
+  try {
+    bets.value = await fb.getBets();
+    leaderboard.value = await fb.getLeaderboard();
+    userPoints.value = userAccount.value ? await fb.getPlayerPoints(userAccount.value.address) : 0;
+  } catch (error) {
+    console.error("Failed to refresh data:", error);
+    bets.value = [];
+    leaderboard.value = [];
+    userPoints.value = 0;
   }
 };
 
-const resolveBet = async (betId) => {
-  resolvingBet.value = betId;
-  await footballBets.resolveBet(betId);
-  resolvingBet.value = 0;
-  await loadBets();
-  await loadLeaderboard();
-  await refreshPlayerPoints();
+const existingIds = computed(() => new Set(
+  bets.value.map(b => (b.id || computeBetId(b.game_date, b.team1, b.team2)).toLowerCase())
+));
+
+// Create with validation + duplicate guard
+const submitCreate = async () => {
+  const { ok, errors, date } = validateBet({
+    date: form.value.date,
+    team1: form.value.team1,
+    team2: form.value.team2,
+    predicted: form.value.predicted,
+  });
+  formErrors.value = errors;
+  if (!ok) return;
+
+  const id = computeBetId(date, form.value.team1, form.value.team2);
+  if (existingIds.value.has(id)) {
+    return toast("Bet already exists for this date/teams.", "error");
+  }
+  if (!isConnected.value) return toast("Connect your wallet to create a bet.", "error");
+
+  try {
+    creatingBet.value = true;
+    // accepted-only: không treo UI
+    const hash = await fb.createBetTx(
+      date,
+      form.value.team1.trim(),
+      form.value.team2.trim(),
+      form.value.predicted
+    );
+    toast(`Submitted: ${short(hash)}`, "info");
+    await refreshAll();
+    // Reset form fields
+    form.value = { date: "", team1: "", team2: "", predicted: "" };
+    formErrors.value = {};
+    showCreateModal.value = false;
+  } catch (e) {
+    toast(String(e?.message || e), "error");
+  } finally {
+    creatingBet.value = false;
+  }
+};
+
+function short(h) { return h ? `${h.slice(0,10)}…${h.slice(-6)}` : ""; }
+function toast(t, type="info"){ (window.$toast?.push || alert)(t); } // dùng toast hệ thống của bạn
+
+// Resolve: tương tự — bạn có thể dùng fb.resolveBetTx(betId) để nhận hash nhanh
+const onResolve = async (betId) => {
+  console.log("DEBUG: onResolve called with betId:", betId);
+  console.log("DEBUG: userAddress:", userAddress.value);
+  console.log("DEBUG: isConnected:", isConnected.value);
+  
+  if (!isConnected.value) return toast("Connect your wallet", "error");
+  try {
+    resolvingBet.value = betId;
+    console.log("DEBUG: Calling fb.resolveBetTx with:", betId);
+    const hash = await fb.resolveBetTx(betId);
+    console.log("DEBUG: Resolve successful, hash:", hash);
+    toast(`Submitted: ${short(hash)}`, "info");
+    await refreshAll();
+  } catch (e) {
+    console.error("DEBUG: Resolve failed:", e);
+    toast(String(e?.message || e), "error");
+  } finally {
+    resolvingBet.value = 0;
+  }
 };
 
 
-// Initialize with some sample data
+// Initialize data on mount and set up account change subscription
+let unsubscribeAccount = null;
+
+// Register lifecycle hooks before any async operations
+onBeforeUnmount(() => {
+  if (unsubscribeAccount) {
+    unsubscribeAccount();
+  }
+});
+
 onMounted(async () => {
-  await loadBets();
-  await loadLeaderboard();
-  await refreshPlayerPoints();
+  // READ-ONLY: init không account để xem dữ liệu ngay
+  fb = new FootballBets(contractAddress, null, studioUrl);
+  await refreshAll();
+
+  unsubscribeAccount = onAccountChanged(async (acc) => {
+    userAccount.value = acc || null;
+    fb.updateAccount(acc || null);
+    await refreshAll();
+  });
 });
 </script>

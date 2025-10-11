@@ -1,4 +1,5 @@
-# { "Depends": "py-genlayer:test" }
+# v0.1.0
+# { "Depends": "py-genlayer:latest" }
 
 import json
 from dataclasses import dataclass
@@ -14,63 +15,77 @@ class Bet:
     resolution_url: str
     team1: str
     team2: str
-    predicted_winner: str
-    real_winner: str
-    real_score: str
+    predicted_winner: str  # "0" = draw, "1" = team1, "2" = team2 (recommended)
+    real_winner: str       # stored as string for easy comparison
+    real_score: str        # example: "1:2" or "-"
 
 
 class FootballBets(gl.Contract):
+    # Each player -> map[bet_id] = Bet
     bets: TreeMap[Address, TreeMap[str, Bet]]
+    # Points for each player
     points: TreeMap[Address, u256]
 
     def __init__(self):
+        # Declaring storage is sufficient; no need for initialization.
         pass
 
     def _check_match(self, resolution_url: str, team1: str, team2: str) -> dict:
-        def get_match_result() -> str:
-            web_data = gl.get_webpage(resolution_url, mode="text")
+        """
+        Returns dict {"score": str, "winner": int}
+        winner: 0 = draw; 1 = team1 wins; 2 = team2 wins; -1 = not finished
+        """
+
+        def get_match_result() -> dict:
+            web_data = gl.nondet.web.render(resolution_url, mode="text")
 
             task = f"""
-Extract the match result for:
+Extract the result of the football match between:
 Team 1: {team1}
 Team 2: {team2}
 
-Web content:
+Web page content:
 {web_data}
+End of web page content.
 
-Respond in JSON:
+Rules:
+- If you see phrases like "Kick off" between team names, the match is NOT finished.
+- If no numeric score is found, assume NOT finished.
+
+Respond ONLY with JSON:
 {{
-    "score": str, // e.g., "1:2" or "-" if unresolved
-    "winner": int // 0 for draw, -1 if unresolved
+  "score": "1:2" | "-" ,  // "-" if not finished
+  "winner": 0 | 1 | 2 | -1 // 0 = draw, -1 = not finished
 }}
-It is mandatory that you respond only using the JSON format above,
-nothing else. Don't include any other words or characters,
-your output must be only JSON without any formatting prefix or suffix.
-This result should be perfectly parsable by a JSON parser without errors.
-        """
-            result = gl.exec_prompt(task).replace("```json", "").replace("```", "")
-            return json.dumps(json.loads(result), sort_keys=True)
+""".strip()
 
-        result_json = json.loads(gl.eq_principle_strict_eq(get_match_result))
+            result = (
+                gl.nondet.exec_prompt(task)
+                .replace("```json", "")
+                .replace("```", "")
+                .strip()
+            )
+            return json.loads(result)
+
+        # Normalize using equality principle (as in PredictionMarket)
+        result_json = gl.eq_principle.strict_eq(get_match_result)
         return result_json
 
     @gl.public.write
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
+        # BBC scores-fixtures URL
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
-        # commented to allow to test matches in the past.
-        # match_status = await self._check_match(match_resolution_url, team1, team2)
 
-        # if int(match_status["winner"]) > -1:
-        #    raise Exception("Game already finished")
-
-        sender_address = gl.message.sender_address
-
+        sender = gl.message.sender_address
         bet_id = f"{game_date}_{team1}_{team2}".lower()
-        if sender_address in self.bets and bet_id in self.bets[sender_address]:
+
+        # Ensure the sender’s bet map exists
+        bets_by_sender = self.bets.get_or_insert_default(sender)
+        if bet_id in bets_by_sender:
             raise Exception("Bet already created")
 
         bet = Bet(
@@ -84,36 +99,49 @@ This result should be perfectly parsable by a JSON parser without errors.
             real_winner="",
             real_score="",
         )
-        self.bets.get_or_insert_default(sender_address)[bet_id] = bet
+        bets_by_sender[bet_id] = bet
 
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
-        if self.bets[gl.message.sender_address][bet_id].has_resolved:
+        sender = gl.message.sender_address
+
+        # Safely retrieve bet
+        bets_by_sender = self.bets.get(sender, None)
+        if bets_by_sender is None or bet_id not in bets_by_sender:
+            raise Exception("Bet not found")
+
+        bet = bets_by_sender[bet_id]
+
+        if bet.has_resolved:
             raise Exception("Bet already resolved")
 
-        bet = self.bets[gl.message.sender_address][bet_id]
         bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
 
+        # winner < 0 => match not finished
         if int(bet_status["winner"]) < 0:
             raise Exception("Game not finished")
 
+        # Save the actual result
         bet.has_resolved = True
         bet.real_winner = str(bet_status["winner"])
         bet.real_score = bet_status["score"]
 
+        # Add 1 point if prediction was correct
         if bet.real_winner == bet.predicted_winner:
-            if gl.message.sender_address not in self.points:
-                self.points[gl.message.sender_address] = 0
-            self.points[gl.message.sender_address] += 1
+            current = self.points.get(sender, u256(0))
+            self.points[sender] = current + u256(1)
 
     @gl.public.view
     def get_bets(self) -> dict:
+        # Returns address -> all bets
         return {k.as_hex: v for k, v in self.bets.items()}
 
     @gl.public.view
     def get_points(self) -> dict:
+        # Returns address -> total points
         return {k.as_hex: v for k, v in self.points.items()}
 
     @gl.public.view
     def get_player_points(self, player_address: str) -> int:
-        return self.points.get(Address(player_address), 0)
+        # Returns points for a specific player
+        return int(self.points.get(Address(player_address), u256(0)))
