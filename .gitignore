@@ -15,3 +15,20 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Next.js build output
+.next/
+out/
+
+# Build caches
+node_modules/
+.pytest_cache/
+
+# Large files
+*.pack
+*.pack.gz

@@ -1,24 +1,37 @@
 {
-  "name": "app",
+  "name": "genlayer-football-bets-nextjs",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "next dev -p 5173",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.4",
+    "@mui/lab": "^7.0.1-beta.18",
+    "@mui/material": "^7.3.4",
+    "@mui/x-data-grid": "^8.14.0",
+    "@mui/x-date-pickers": "^8.14.0",
+    "date-fns": "^4.1.0",
     "ethers": "^6.15.0",
     "genlayer-js": "^0.18.2",
-    "lucide-vue-next": "^0.446.0",
-    "vue": "^3.4.37"
+    "next": "14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.2",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.20",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "14.0.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
-    "vite": "^5.4.1"
+    "typescript": "^5.0.0"
   }
 }

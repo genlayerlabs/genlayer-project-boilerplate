@@ -1,25 +1,14 @@
-// Client-side crypto for secure key storage (no Buffer).
-// AES-GCM + PBKDF2 using WebCrypto.
+'use client'
+
+import { bytesToHex, hexToBytes } from './hex'
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-function bytesToHex(u8) {
-  return [...u8].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function hexToBytes(hex) {
-  const h = hex.startsWith("0x") ? hex.slice(2) : hex;
-  if (h.length % 2) throw new Error("Invalid hex length");
-  const out = new Uint8Array(h.length / 2);
-  for (let i = 0; i < h.length; i += 2) out[i / 2] = parseInt(h.slice(i, i + 2), 16);
-  return out;
-}
-
-async function deriveKey(passphrase, salt) {
+async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
   const material = await crypto.subtle.importKey("raw", enc.encode(passphrase), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
-    { name: "PBKDF2", salt, iterations: 120000, hash: "SHA-256" },
+    { name: "PBKDF2", salt: salt as BufferSource, iterations: 120000, hash: "SHA-256" },
     material,
     { name: "AES-GCM", length: 256 },
     false,
@@ -27,7 +16,7 @@ async function deriveKey(passphrase, salt) {
   );
 }
 
-export async function encryptString(plaintext, passphrase) {
+export async function encryptString(plaintext: string, passphrase: string): Promise<{iv: string, salt: string, data: string}> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await deriveKey(passphrase, salt);
@@ -39,10 +28,10 @@ export async function encryptString(plaintext, passphrase) {
   };
 }
 
-export async function decryptString(payload, passphrase) {
-  const iv = hexToBytes(payload.iv);
-  const salt = hexToBytes(payload.salt);
-  const data = hexToBytes(payload.data);
+export async function decryptString(payload: {iv: string, salt: string, data: string}, passphrase: string): Promise<string> {
+  const iv = new Uint8Array(hexToBytes(payload.iv));
+  const salt = new Uint8Array(hexToBytes(payload.salt));
+  const data = new Uint8Array(hexToBytes(payload.data));
   const key = await deriveKey(passphrase, salt);
   const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data);
   return dec.decode(pt);
