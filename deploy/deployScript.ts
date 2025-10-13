@@ -28,7 +28,12 @@ export default async function main(client: GenLayerClient<any>) {
       retries: 200,
     });
 
+    console.log(`Transaction receipt status: ${receipt.status} (${receipt.statusName})`);
+    console.log(`Transaction result: ${receipt.result} (${receipt.resultName})`);
+
     if (
+      receipt.status !== 5 && // ACCEPTED status
+      receipt.status !== 6 && // FINALIZED status
       receipt.statusName !== TransactionStatus.ACCEPTED &&
       receipt.statusName !== TransactionStatus.FINALIZED
     ) {
