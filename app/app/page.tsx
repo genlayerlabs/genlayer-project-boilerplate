@@ -1,8 +1,11 @@
 'use client'
 
 import { ThemeProvider, createTheme } from '@mui/material/styles'
-import { Box, Typography, Button, Card, CardContent, Container } from '@mui/material'
+import { Box, Typography, Button, Card, CardContent, Container, CircularProgress } from '@mui/material'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+
+export const dynamic = 'force-dynamic'
 
 const theme = createTheme({
   palette: {
@@ -44,17 +47,13 @@ const theme = createTheme({
 })
 
 export default function HomePage() {
+  const [isNavigating, setIsNavigating] = useState(false)
   const router = useRouter()
 
-  const handleStartBetting = () => {
-    console.log('Start Betting clicked!')
-    try {
-      router.push('/bets')
-    } catch (error) {
-      console.error('Router error:', error)
-      // Fallback to window.location
-      window.location.href = '/bets'
-    }
+  const handleNavigation = () => {
+    setIsNavigating(true)
+    // Use router.push for faster navigation
+    router.push('/bets')
   }
 
   return (
@@ -68,12 +67,20 @@ export default function HomePage() {
             Decentralized football betting powered by GenLayer
           </Typography>
           <Button
-            onClick={handleStartBetting}
             variant="contained"
             size="large"
             sx={{ px: 4, py: 1.5 }}
+            onClick={handleNavigation}
+            disabled={isNavigating}
           >
-            Start Betting →
+            {isNavigating ? (
+              <>
+                <CircularProgress size={20} sx={{ mr: 1 }} />
+                Loading...
+              </>
+            ) : (
+              'Start Betting →'
+            )}
           </Button>
         </Box>
         

@@ -7,7 +7,7 @@ import {
   DecodedDeployData,
   GenLayerChain,
 } from "genlayer-js/types";
-import { localnet } from "genlayer-js/chains";
+import { studionet } from "genlayer-js/chains";
 
 export default async function main(client: GenLayerClient<any>) {
   const filePath = path.resolve(process.cwd(), "contracts/football_bets.py");
@@ -36,7 +36,7 @@ export default async function main(client: GenLayerClient<any>) {
     }
 
     const deployedContractAddress =
-      (client.chain as GenLayerChain).id === localnet.id
+      (client.chain as GenLayerChain).id === studionet.id
         ? receipt.data.contract_address
         : (receipt.txDataDecoded as DecodedDeployData)?.contractAddress;
 

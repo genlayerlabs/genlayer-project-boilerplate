@@ -41,6 +41,22 @@ A decentralized football betting application built with Next.js 14, TypeScript, 
 - **BetsScreen**: Betting interface with leaderboard
 - **AddressLabel**: Shortened address display
 - **TxStatus**: Transaction lifecycle tracking
+## Schema Validation
+
+Run:
+
+```bash
+npm run schema:check
+```
+
+It reads `contracts/football_bets.py`, asks GenLayer for a schema for code, verifies the presence of:
+- `create_bet(game_date, team1, team2, predicted_winner)`
+- `resolve_bet(bet_id)`
+- `get_bets()`
+- `get_points()`
+- `get_player_points(player_address)`
+
+On success, writes a canonical schema hash to `config/schema.json`.
 
 ### Services
 

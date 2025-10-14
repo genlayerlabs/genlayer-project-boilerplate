@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { pubsub } from '@/lib/pubsub'
+import React, { createContext, useContext, useState, useEffect, ReactNode, memo } from 'react'
+import { pubsub } from '../lib/pubsub'
 
 export interface Account {
   address?: string;
@@ -15,7 +15,7 @@ interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
-export function AccountProvider({ children }: { children: ReactNode }) {
+export const AccountProvider = memo(function AccountProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       {children}
     </AccountContext.Provider>
   );
-}
+});
 
 export function useAccount() {
   const context = useContext(AccountContext);
