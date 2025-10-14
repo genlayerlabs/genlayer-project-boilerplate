@@ -11,6 +11,7 @@ import {
   Tabs,
   Tab,
   Box,
+  Collapse,
   TextField,
   Button,
   Alert,
@@ -35,6 +36,8 @@ import {
   AccountBalanceWallet,
   CheckCircle,
   ContentCopy,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material'
 
 // Lazy-load heavier components
@@ -128,6 +131,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
   const [sessionPassphrase, setSessionPassphrase] = useState('')
   const [showSessionPassphrase, setShowSessionPassphrase] = useState(false)
   const [authorizeStep, setAuthorizeStep] = useState(0)
+  const [localCollapsed, setLocalCollapsed] = useState(true)
 
   // Wagmi hooks
   const { address: evmAccountAddress, isConnected: isEvmConnected } = useEvmAccount()
@@ -563,6 +567,11 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
 
         {/* GenLayer Local Tab */}
         <TabPanel value={tabValue} index={0}>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>GenLayer Local</Typography>
+            <Button size="small" onClick={() => setLocalCollapsed(!localCollapsed)} startIcon={localCollapsed ? <ExpandMore /> : <ExpandLess />}> {localCollapsed ? 'Expand' : 'Collapse'} </Button>
+          </Box>
+          <Collapse in={!localCollapsed} timeout="auto" unmountOnExit>
           <Box sx={{ mb: 3 }}>
             <Stepper activeStep={createStep} sx={{ mb: 3 }}>
               <Step>
@@ -823,6 +832,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
               </Button>
             </Box>
           </Box>
+          </Collapse>
         </TabPanel>
 
         {/* External EVM Tab */}
