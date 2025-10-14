@@ -89,6 +89,4 @@ export default function HomePage() {
   )
 }
 
-export { default } from '../../app/page'
-
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { Box, Typography, Container } from '@mui/material'
-import { AccountProvider } from '@/store/account'
-import ConnectWallet from '@/components/ConnectWallet'
-import BetsScreen from '@/components/BetsScreen'
+import { AccountProvider } from '../../src/store/account'
+import ConnectWallet from '../../src/components/ConnectWallet'
+import BetsScreen from '../../src/components/BetsScreen'
 
 export default function BetsPage() {
   return (
@@ -25,7 +25,5 @@ export default function BetsPage() {
     </AccountProvider>
   );
 }
-
-export { default } from '../../../app/bets/page'
 
 
