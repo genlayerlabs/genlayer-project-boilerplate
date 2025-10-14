@@ -398,6 +398,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
         types: typed.types as any,
         primaryType: 'Session',
         message: typed.message as any,
+        account: evmAccountAddress as `0x${string}`,
       })
 
       // No passphrase for auto-session; store raw ephemeral session

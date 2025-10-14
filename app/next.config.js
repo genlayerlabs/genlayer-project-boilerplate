@@ -18,7 +18,7 @@ const nextConfig = {
   },
   // Disable static export for better performance in dev
   // output: 'export',
-  trailingSlash: true,
+  trailingSlash: false,
   images: {
     unoptimized: true,
   },

@@ -59,9 +59,9 @@ export function buildEip712TypedData(params: BuildTypedDataParams) {
 }
 
 async function hkdfSha256(ikm: Uint8Array, salt: Uint8Array, info: Uint8Array, length: number): Promise<Uint8Array> {
-  const keyMaterial = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits'])
+  const keyMaterial = await crypto.subtle.importKey('raw', ikm.buffer as ArrayBuffer, 'HKDF', false, ['deriveBits'])
   const bits = await crypto.subtle.deriveBits(
-    { name: 'HKDF', salt, info, hash: 'SHA-256' },
+    { name: 'HKDF', salt: salt.buffer as ArrayBuffer, info: info.buffer as ArrayBuffer, hash: 'SHA-256' },
     keyMaterial,
     length * 8
   )
@@ -113,7 +113,7 @@ async function importPbkdf2Key(passphrase: string) {
 
 async function deriveAesGcmKey(pbkdf2Key: CryptoKey, salt: Uint8Array) {
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 120000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations: 120000, hash: 'SHA-256' },
     pbkdf2Key,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -127,7 +127,7 @@ export async function encryptSessionKey(params: { privKey: Uint8Array; passphras
   const pbkdf2Key = await importPbkdf2Key(params.passphrase)
   const aesKey = await deriveAesGcmKey(pbkdf2Key, salt)
   const exp = Date.now() + params.ttlMs
-  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, params.privKey)
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, aesKey, params.privKey.buffer as ArrayBuffer)
   const payload: EncryptedSessionPayload = {
     ct: bytesToHex(new Uint8Array(ct)),
     iv: bytesToHex(iv),
