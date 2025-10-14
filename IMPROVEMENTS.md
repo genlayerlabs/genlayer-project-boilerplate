@@ -1,12 +1,11 @@
-# GenLayer Project Improvements Documentation
+# GenLayer Project Improvements
 
-## Overview
-This document outlines all the improvements made to the GenLayer project boilerplate, focusing on implementing a secure, local-first wallet system with enhanced user experience and better architecture.
+This document summarizes the key improvements made across the project, aligning the app with the latest GenLayerJS SDK, improving wallet UX (local + EVM session), and hardening contract interactions on Studionet.
 
 ## 🔐 Security Enhancements
 
-### 1. AES-GCM Encryption Implementation
-**File**: `app/src/lib/crypto.js`
+### 1. AES-GCM Encryption
+**Files**: `app/src/lib/crypto.ts`
 
 **Improvements**:
 - Implemented pure WebCrypto API encryption without Node.js Buffer dependency
@@ -23,7 +22,7 @@ export async function decryptString(payload, passphrase)
 ```
 
 ### 2. Secure Account Management
-**File**: `app/src/services/genlayer.js`
+**File**: `app/src/services/genlayer.ts`
 
 **Improvements**:
 - Replaced plaintext private key storage with AES-GCM encrypted storage
@@ -50,8 +49,8 @@ export function onAccountChanged(fn)
 
 ## 🎨 User Interface Enhancements
 
-### 3. Advanced Wallet Component
-**File**: `app/src/components/ConnectWallet.vue`
+### 3. Wallet Component (React)
+**File**: `app/src/components/ConnectWallet.tsx`
 
 **Improvements**:
 - Created comprehensive wallet management UI with multiple import methods
@@ -71,7 +70,7 @@ export function onAccountChanged(fn)
 - Real-time address display updates
 
 ### 4. Secure Recovery Phrase Export
-**File**: `app/src/components/ConnectWallet.vue`
+**File**: `app/src/components/ConnectWallet.tsx`
 
 **Improvements**:
 - Implemented secure recovery phrase export functionality
@@ -96,8 +95,8 @@ await saveEncryptedMnemonic(mnemonic, passphrase)
 const mnemonic = await getEncryptedMnemonic(passphrase)
 ```
 
-### 5. Enhanced Bets Screen Integration
-**File**: `app/src/components/BetsScreen.vue`
+### 5. Bets Screen Integration
+**File**: `app/src/components/BetsScreen.tsx`
 
 **Improvements**:
 - Integrated with secure wallet system
@@ -114,7 +113,7 @@ const mnemonic = await getEncryptedMnemonic(passphrase)
 ## 🏗️ Architecture Improvements
 
 ### 6. Local Wallet Generation
-**File**: `app/src/lib/localWallet.js`
+**File**: `app/src/lib/localWallet.ts`
 
 **Improvements**:
 - Implemented client-side wallet generation using ethers v6
@@ -146,18 +145,18 @@ export function isValidPrivateKey(hex)
 
 ### 8. Dependency Updates
 **Improvements**:
-- Updated genlayer-js from v0.13.0 to v0.18.2 (latest version)
+- Updated `genlayer-js` and aligned with Studionet chain usage
 - Added ethers v6 for wallet operations
 - Maintained backward compatibility with existing contract interactions
 
 ### 9. Configuration Management
-**File**: `app/.env`
+**Files**: `app/next.config.js`, `.env.local`
 
 **Improvements**:
 - Properly configured GenLayer Studio endpoint (`https://studio.genlayer.com/api`)
 - Added correct contract address format with quotes
 - Fixed RPC communication issues
-- **Updated contract address to latest deployed version**: `0x2146690DCB6b857e375cA51D449e4400570e7c76`
+- Contract address is provided via `NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS` (Studionet)
 
 ### 10. Smart Contract Integration
 **File**: `contracts/football_bets.py`
@@ -193,7 +192,7 @@ def get_player_points(player_address: str) -> int
 - **Winner Logic**: 0 = draw, 1 = team1 wins, 2 = team2 wins, -1 = not finished
 - **Storage**: TreeMap[Address, TreeMap[str, Bet]] for bets, TreeMap[Address, u256] for points
 
-### 11. Smart Contract Migration & Modernization
+### 11. Smart Contract Modernization
 **File**: `contracts/football_bets.py`
 
 **Version Migration**:
@@ -278,7 +277,45 @@ def get_player_points(player_address: str) -> int
 | Comments | Mixed language | Fully English |
 | Compatibility | Partial | 100% GenLayer v0.18+ |
 
-**Status**: ✅ Deployed, stable, and aligned with prediction market architecture
+**Status**: ✅ Deployed and aligned with prediction market architecture
+
+### 12. Session Authorization (EIP-712)
+**Files**: `app/src/services/crypto/sessionKey.ts`, `app/src/components/ConnectWallet.tsx`, `app/src/services/genlayer.ts`
+
+- Build EIP-712 typed data for session authorization
+- Derive session key (HKDF-SHA256) from signature
+- Support encrypted sessions (PBKDF2 + AES-GCM) and ephemeral sessions (no passphrase, TTL in `sessionStorage`)
+- Auto-authorize session after EVM wallet connects
+
+### 13. GenLayer Client and IO Wrappers
+**File**: `app/src/services/genlayer.ts`
+
+- Single client factory with read-only fallback account
+- `read()` with retry after `initializeConsensusSmartContract()`
+- `writeWithFinality()` with receipt polling and safe guards
+- Endpoint defaults to `https://studio.genlayer.com/api`
+
+### 14. FootballBets Service
+**File**: `app/src/services/FootballBets.ts`
+
+- Read caching, robust Map/Object handling
+- Return transaction hashes for UI instead of raw objects
+- Delegated receipt polling to GenLayer service
+
+### 15. UI/UX Adjustments
+- Disable Local tab when EVM is connected, and disable EVM tab when Local is connected
+- Display predicted winner: 0 → Draw, 1 → team1, 2 → team2
+
+### 16. Error Fixes
+- Fixed React child object rendering by avoiding rendering full objects
+- Normalized contract address input and improved diagnostics
+
+### 17. Performance
+- Client caching and selective lazy-loading
+
+### 18. What to configure
+- `NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS` (Studionet deployed contract)
+- `NEXT_PUBLIC_STUDIO_URL` (defaults to Studionet)
 
 ### 12. Error Handling & User Experience
 **Improvements**:

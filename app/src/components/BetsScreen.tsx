@@ -141,7 +141,7 @@ const BetsScreen = memo(function BetsScreen() {
         betData.gameDate,
         betData.team1,
         betData.team2,
-        betData.predictedWinner
+        betData.predicted // '0' | '1' | '2'
       )
       
       setTxHash(hash)
@@ -327,7 +327,7 @@ const BetsScreen = memo(function BetsScreen() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          Winner: {bet.predicted_winner}
+                          Winner: {bet.predicted_winner === '0' ? 'Draw' : (bet.predicted_winner === '1' ? bet.team1 : bet.team2)}
                         </Typography>
                       </TableCell>
                       <TableCell>

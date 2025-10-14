@@ -1,8 +1,8 @@
 'use client'
 
-import { read, writeWithFinality } from './genlayer'
+import { read, writeWithFinality, waitForTransactionReceipt as glWait } from './genlayer'
 
-// Cache for API responses
+// Lightweight cache for read operations to reduce RPC load
 const responseCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_DURATION = 30 * 1000; // 30 seconds for read operations
 
@@ -24,9 +24,7 @@ export interface LeaderboardEntry {
 }
 
 export class FootballBets {
-  constructor() {
-    // Contract address is handled by genlayer service
-  }
+  constructor() {}
 
   async getBets(): Promise<Bet[]> {
     const cacheKey = 'get_bets';
@@ -40,11 +38,24 @@ export class FootballBets {
     try {
       const bets = await read('get_bets', []);
       console.log('Raw bets data:', bets)
-      const formattedBets = Array.from((bets as any).entries()).flatMap((entry: any) => {
+
+      const outerEntries = (bets && typeof (bets as any).entries === 'function')
+        ? Array.from((bets as any).entries())
+        : Object.entries(bets as Record<string, any>);
+
+      const formattedBets = outerEntries.flatMap((entry: any) => {
         const [owner, bet] = entry as [string, any];
-        return Array.from((bet as any).entries()).map((betEntry: any) => {
+        const innerEntries = (bet && typeof bet.entries === 'function')
+          ? Array.from(bet.entries())
+          : Object.entries(bet as Record<string, any>);
+
+        return innerEntries.map((betEntry: any) => {
           const [id, betData] = betEntry as [string, any];
-          const betObj = Array.from((betData as any).entries()).reduce((obj: any, dataEntry: any) => {
+          const dataEntries = (betData && typeof betData.entries === 'function')
+            ? Array.from(betData.entries())
+            : Object.entries(betData as Record<string, any>);
+
+          const betObj = dataEntries.reduce((obj: any, dataEntry: any) => {
             const [key, value] = dataEntry as [string, any];
             obj[key] = value;
             return obj;
@@ -94,12 +105,17 @@ export class FootballBets {
     try {
       const points = await read('get_points', []);
       console.log('Raw leaderboard data:', points)
-      const formattedLeaderboard = Array.from((points as any).entries())
+
+      const pointEntries = (points && typeof (points as any).entries === 'function')
+        ? Array.from((points as any).entries())
+        : Object.entries(points as Record<string, any>);
+
+      const formattedLeaderboard = pointEntries
         .map((entry: any) => {
-          const [address, points] = entry as [string, any];
+          const [address, pts] = entry as [string, any];
           return {
             address,
-            points: Number(points),
+            points: Number(pts),
           };
         })
         .sort((a, b) => b.points - a.points);
@@ -128,26 +144,22 @@ export class FootballBets {
     responseCache.delete('get_bets');
     responseCache.delete('get_leaderboard');
     
-    return result;
+    // Return the transaction hash string for UI rendering
+    return result.hash as string;
   }
 
   async waitForTransactionReceipt({ hash }: { hash: string }) {
-    // This would typically call the genlayer service's waitForTransactionReceipt
-    // For now, return a mock receipt
-    return {
-      hash,
-      status: 'FINALIZED' as const,
-      blockNumber: 12345,
-      gasUsed: 21000,
-    }
+    // Delegate to GenLayer service to poll Studionet
+    return await glWait({ hash, status: 'FINALIZED', retries: 200, interval: 3000 })
   }
 
   async createBetTx(gameDate: string, team1: string, team2: string, predictedWinner: string) {
-    return await writeWithFinality('create_bet', [gameDate, team1, team2, predictedWinner], {
+    const receipt = await writeWithFinality('create_bet', [gameDate, team1, team2, predictedWinner], {
       status: 'FINALIZED',
       retries: 200,
       interval: 3000
     });
+    return receipt.hash as string;
   }
 
   async resolveBetTx(betId: string) {

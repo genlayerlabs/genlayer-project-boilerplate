@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, lazy, Suspense, memo, useCallback } from 'react'
-import { useAccount as useEvmAccount, useConnect, useDisconnect } from 'wagmi'
+import { useAccount as useEvmAccount, useConnect, useDisconnect, useChainId, useSignTypedData } from 'wagmi'
 import { useConfig } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import {
@@ -37,7 +37,7 @@ import {
   ContentCopy,
 } from '@mui/icons-material'
 
-// Lazy load ALL heavy components
+// Lazy-load heavier components
 const CreateBetDialog = lazy(() => import('./CreateBetDialog'))
 // SessionManagement removed
 
@@ -51,8 +51,11 @@ import {
   clearAccount,
   onAccountChanged,
   createSessionFromEvmSignature,
+  initClientFromSession,
+  setPrimaryOnchainEngine,
   testCodeLoaded,
 } from '../services/genlayer'
+import { buildEip712TypedData } from '../services/crypto/sessionKey'
 import { encryptString, decryptString } from '../lib/crypto'
 import { safeLocalStorage, safeSessionStorage } from '../lib/safe-storage'
 
@@ -131,6 +134,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
   const { connect: evmConnect, connectors } = useConnect()
   const { disconnect: evmDisconnect } = useDisconnect()
   const config = useConfig()
+  const chainId = useChainId()
+  const { signTypedDataAsync } = useSignTypedData()
 
   // Optimized handlers with useCallback
   const showSnackbar = useCallback((message: string, severity: 'success' | 'error' = 'success') => {
@@ -366,25 +371,62 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     }
   }, [evmDisconnect, showSnackbar])
 
-  const onAuthorizeSession = useCallback(async () => {
-    if (!evmAccountAddress || !sessionPassphrase) {
-      showSnackbar('Please connect EVM wallet and enter passphrase', 'error')
+  const onAuthorizeSession = useCallback(async (opts?: { auto?: boolean }) => {
+    if (!evmAccountAddress) {
+      showSnackbar('Please connect EVM wallet', 'error')
       return
     }
 
     setLoading(true)
     try {
-      // Session authorization removed - simplified to basic EVM connection
+      const audience = 'genlayer:studionet'
+      const typed = buildEip712TypedData({
+        evmAddress: evmAccountAddress,
+        audience,
+        scope: 'football_bets',
+        permissions: ['create_bet','resolve_bet'],
+        ttlMs: 2 * 60 * 60 * 1000, // 2h for auto-session
+        chainId: chainId || 61999,
+      })
+
+      const signature = await signTypedDataAsync({
+        domain: typed.domain as any,
+        types: typed.types as any,
+        primaryType: 'Session',
+        message: typed.message as any,
+      })
+
+      // No passphrase for auto-session; store raw ephemeral session
+      await createSessionFromEvmSignature({
+        evmAddress: evmAccountAddress,
+        typedData: typed,
+        signature,
+        passphrase: opts?.auto ? '' : sessionPassphrase,
+        ttlMs: 2 * 60 * 60 * 1000,
+      })
+
+      const ok = await initClientFromSession(opts?.auto ? '' : sessionPassphrase)
+      if (!ok) {
+        showSnackbar('Session init failed', 'error')
+        setLoading(false)
+        return
+      }
+
+      setPrimaryOnchainEngine('session')
       setEvmAddress(evmAccountAddress)
       setAuthorizeStep(2)
-      showSnackbar('EVM wallet connected successfully!')
-    } catch (error) {
+      showSnackbar('Session ready ✓')
+      setSessionPassphrase('')
+    } catch (error: any) {
+      const msg = (error?.code === 4001 || /rejected/i.test(String(error?.message)))
+        ? 'Signature rejected'
+        : 'Failed to authorize session'
       console.error('Failed to authorize session:', error)
-      showSnackbar('Failed to authorize session', 'error')
+      showSnackbar(msg, 'error')
     } finally {
       setLoading(false)
     }
-  }, [evmAccountAddress, sessionPassphrase, config, showSnackbar])
+  }, [evmAccountAddress, sessionPassphrase, chainId, signTypedDataAsync, showSnackbar])
 
   // Effects
   useEffect(() => {
@@ -402,12 +444,13 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
   useEffect(() => {
     if (isEvmConnected && evmAccountAddress) {
       setEvmAddress(evmAccountAddress)
-      // Auto-open authorize modal after EVM connection
+      // Auto-authorize session (no passphrase)
       if (authorizeStep === 0) {
         setAuthorizeStep(1)
+        onAuthorizeSession({ auto: true })
       }
     }
-  }, [isEvmConnected, evmAccountAddress, authorizeStep])
+  }, [isEvmConnected, evmAccountAddress, authorizeStep, onAuthorizeSession])
 
   if (connectedAddr) {
     return (
@@ -514,8 +557,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
       <CardHeader title="Connect Wallet" />
       <CardContent>
         <Tabs value={tabValue} onChange={handleTabChange} aria-label="wallet connection tabs">
-          <Tab label="GenLayer Local" />
-          <Tab label="External EVM" />
+          <Tab label="GenLayer Local" disabled={isEvmConnected} />
+          <Tab label="External EVM" disabled={!!connectedAddr} />
         </Tabs>
 
         {/* GenLayer Local Tab */}
@@ -597,10 +640,10 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
                   sx={{ mb: 2 }}
                 />
                 <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Button
+                <Button
                     variant="contained"
                     onClick={handleCreate}
-                    disabled={loading || !createPass || !createPass2}
+                  disabled={loading || !createPass || !createPass2 || isEvmConnected}
                     startIcon={loading ? <CircularProgress size={20} /> : <VpnKey />}
                     fullWidth
                   >
@@ -680,7 +723,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
               <Button
                 variant="outlined"
                 onClick={handleImportMnemonic}
-                disabled={loading || !importMnemonic.trim() || !importPass}
+                disabled={loading || !importMnemonic.trim() || !importPass || isEvmConnected}
                 startIcon={loading ? <CircularProgress size={20} /> : <VpnKey />}
                 fullWidth
               >
@@ -736,7 +779,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
               <Button
                 variant="outlined"
                 onClick={handleImportPrivKey}
-                disabled={loading || !importPrivKey.trim() || !importPrivPass}
+                disabled={loading || !importPrivKey.trim() || !importPrivPass || isEvmConnected}
                 startIcon={loading ? <CircularProgress size={20} /> : <VpnKey />}
                 fullWidth
               >
@@ -772,7 +815,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
               <Button
                 variant="outlined"
                 onClick={handleUnlock}
-                disabled={loading || !unlockPass}
+                disabled={loading || !unlockPass || isEvmConnected}
                 startIcon={loading ? <CircularProgress size={20} /> : <Lock />}
                 fullWidth
               >
@@ -789,7 +832,7 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
               <Button
                 variant="contained"
                 onClick={handleEvmConnect}
-                disabled={loading}
+                disabled={loading || !!connectedAddr}
                 startIcon={loading ? <CircularProgress size={20} /> : <AccountBalanceWallet />}
                 fullWidth
                 sx={{ mb: 2 }}
@@ -839,8 +882,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
                 />
                 <Button
                   variant="contained"
-                  onClick={onAuthorizeSession}
-                  disabled={loading || !sessionPassphrase}
+                  onClick={() => onAuthorizeSession()}
+                  disabled={loading || !isEvmConnected}
                   startIcon={loading ? <CircularProgress size={20} /> : <Lock />}
                   fullWidth
                 >

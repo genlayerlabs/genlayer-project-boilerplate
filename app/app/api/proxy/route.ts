@@ -8,26 +8,29 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
+    // Forward the raw JSON body without re-encoding, to avoid encoding/header mismatches
+    const raw = await request.text();
     const response = await fetch(studioUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: raw,
     });
 
-    const data = await response.json();
-    
-    // Add CORS headers to the response
+    // Clone upstream headers but remove content-encoding/length since body is passed-through
     const headers = new Headers(response.headers);
+    headers.delete('content-encoding');
+    headers.delete('Content-Encoding');
+    headers.delete('content-length');
+    headers.delete('Content-Length');
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    return new NextResponse(JSON.stringify(data), {
+    return new NextResponse(response.body, {
       status: response.status,
-      headers: headers,
+      headers,
     });
   } catch (error) {
     console.error('Proxy error:', error);

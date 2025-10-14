@@ -3,10 +3,19 @@
 import { createClient, createAccount as glCreateAccount, generatePrivateKey } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { encryptString, decryptString } from "../lib/crypto";
+import {
+  buildEip712TypedData,
+  deriveSessionSeedFromSignature,
+  makeGenLayerPrivateKeyFromSeed,
+  encryptSessionKey,
+  decryptSessionKey,
+  type EncryptedSessionPayload,
+} from "./crypto/sessionKey";
+import { bytesToHex } from "../lib/hex";
 import { pubsub } from "../lib/pubsub";
 import { safeLocalStorage, safeSessionStorage } from "../lib/safe-storage";
 
-// Cache for client instances
+// Client instance cache to avoid recreating clients on every call
 const clientCache = new Map<string, any>();
 const cacheTimeout = 5 * 60 * 1000; // 5 minutes
 
@@ -14,28 +23,24 @@ const ENC_KEY = "gl.enc.account.v1";
 const SES_KEY = "gl.session.priv.v1";
 const LAST_ADDR = "gl.last.address.v1";
 const MNEMONIC_KEY = "gl.enc.mnemonic.v1";
-const SES_AUTH_KEY = "gl.enc.session.v1"; // encrypted session key payload with ttl
+const SES_AUTH_KEY = "gl.enc.session.v1"; // legacy key (kept for backward-compat)
+const SES_V1_KEY = "gl:session:v1"; // new key per spec (encrypted)
+const SES_RAW_KEY = "gl:session:raw"; // ephemeral raw session (no passphrase)
 
 // State management
 let _localAccount: any = null;
 let _sessionAccount: any = null;
+let _readOnlyAccount: any = null; // fallback account for read-only calls
 let _externalEvmAddress: string | undefined;
 let _primaryOnchainEngine: 'local' | 'session' | null = null;
 let _endpoint: string | undefined = undefined;
 
-// Initialize endpoint from environment
-if (typeof window !== 'undefined') {
-  try {
-    // Use localhost proxy to avoid CORS issues in development
-    _endpoint = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3000/api/proxy' 
-      : process.env.NEXT_PUBLIC_STUDIO_URL || undefined;
-  } catch (e) {
-    // Ignore SSR errors
-  }
-} else {
-  // SSR safe - set endpoint to undefined
-  _endpoint = undefined;
+// Initialize endpoint from environment; prefer Studionet unless overridden
+try {
+  const envUrl = (typeof process !== 'undefined' && process.env && (process.env.NEXT_PUBLIC_STUDIO_URL as string)) || undefined;
+  _endpoint = envUrl || 'https://studio.genlayer.com/api';
+} catch (e) {
+  _endpoint = 'https://studio.genlayer.com/api';
 }
 
 // Type definitions
@@ -55,7 +60,7 @@ export interface RouterState {
   isConnectedEvm: boolean;
 }
 
-// Address validation helper
+// Basic address validation utilities
 function validateAddress(address: string): `0x${string}` {
   // Simple validation - genlayer-js will handle proper validation
   if (!address.startsWith('0x') || address.length !== 42) {
@@ -64,7 +69,17 @@ function validateAddress(address: string): `0x${string}` {
   return address as `0x${string}`;
 }
 
-// Private key validation helper
+function normalizeAddress(addr: string | undefined | null): `0x${string}` {
+  if (!addr) throw new Error('Contract address not configured');
+  const a = String(addr).trim();
+  if (!/^0x[0-9a-fA-F]{40}$/.test(a)) {
+    throw new Error(`Invalid contract address format: ${addr}`);
+  }
+  // Preserve original casing (checksum or mixed-case) as provided
+  return a as `0x${string}`;
+}
+
+// Basic private key format validation
 function validatePrivateKey(privKey: string): `0x${string}` {
   // Private key should be 64 hex characters + 0x prefix = 66 total
   if (!privKey.startsWith('0x') || privKey.length !== 66) {
@@ -173,7 +188,7 @@ export async function importMnemonicSecure(mnemonic: string, passphrase: string)
   return await importPrivKeySecure(wallet.privateKey, passphrase);
 }
 
-// Test function to verify code is loaded
+// Utility to verify hot reload state during debugging
 export function testCodeLoaded() {
   console.log('✅ NEW CODE IS LOADED! Current timestamp:', new Date().toISOString());
   return true;
@@ -263,15 +278,27 @@ export function clearAccount() {
 }
 
 // Client management
-export function makeClient() {
-  const acc = _primaryOnchainEngine === 'session' ? _sessionAccount : _localAccount;
-  if (!acc) {
+export function makeClient({ allowReadOnly = true }: { allowReadOnly?: boolean } = {}) {
+  let acc = _primaryOnchainEngine === 'session' ? _sessionAccount : _localAccount;
+  // For read-only access on Studionet, provide a temporary in-memory account if none connected
+  if (!acc && allowReadOnly) {
+    if (!_readOnlyAccount) {
+      try {
+        // createAccount() with no args generates a new keypair
+        _readOnlyAccount = glCreateAccount();
+      } catch (e) {
+        console.warn('Failed to create read-only account fallback:', e);
+      }
+    }
+    acc = _readOnlyAccount || acc;
+  }
+  if (!acc && !allowReadOnly) {
     console.warn("No account available for client creation");
     return null;
   }
 
-  const accountAddress = acc.address;
-  const cacheKey = `client_${accountAddress}_${_primaryOnchainEngine}`;
+  const accountAddress = acc ? acc.address : 'readOnly';
+  const cacheKey = `client_${accountAddress}_${_primaryOnchainEngine ?? 'none'}`;
   
   // Check cache first
   const cached = clientCache.get(cacheKey);
@@ -281,11 +308,13 @@ export function makeClient() {
   }
 
   try {
-    // Create client with studionet chain according to docs
+    // Create client with Studionet chain per SDK docs
     const config: any = { 
       chain: studionet,
-      account: acc
     };
+    if (acc) {
+      config.account = acc;
+    }
     
     // Add custom endpoint if available
     if (_endpoint) {
@@ -364,35 +393,83 @@ export async function createSessionFromEvmSignature(params: {
   ttlMs?: number;
 }) {
   const ttlMs = params.ttlMs ?? 7 * 24 * 60 * 60 * 1000;
-  const expiry = Date.now() + ttlMs;
-  
-  // Simple seed from signature hex (placeholder); ensure 0x prefix
-  const seed = ('0x' + params.signature.replace(/^0x/, '').slice(0, 64)).padEnd(66, '0') as `0x${string}`;
-  _sessionAccount = glCreateAccount(seed);
+  const audience: string = params.typedData?.message?.audience || 'genlayer:studionet';
+  const nonce: string = params.typedData?.message?.nonce || '0x' + '00'.repeat(32);
+  // Derive a stable domain salt from domain name to avoid requiring extra hash deps
+  const domainSaltHex = '0x' + Array.from(new TextEncoder().encode('GL_SESSION_V1')).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  // 1) HKDF-SHA256 from signature → seed
+  const seed32 = await deriveSessionSeedFromSignature({
+    signature: params.signature,
+    domainSalt: domainSaltHex,
+    nonce,
+    audience,
+  });
+
+  // 2) Make GenLayer private key from seed
+  const privKeyBytes = makeGenLayerPrivateKeyFromSeed(seed32);
+  const privHex = ("0x" + bytesToHex(privKeyBytes)) as `0x${string}`;
+
+  // 3) Create session account
+  _sessionAccount = glCreateAccount(privHex);
   _externalEvmAddress = validateAddress(params.evmAddress);
   _primaryOnchainEngine = 'session';
 
-  const payload = { seed, expiry, evm: params.evmAddress };
-  const enc = await encryptString(JSON.stringify(payload), params.passphrase);
-  safeLocalStorage.setItem(SES_AUTH_KEY, JSON.stringify(enc));
+  // 4) Persist session key
+  if (params.passphrase && params.passphrase.length >= 8) {
+    // Encrypted, long-lived
+    const encPayload = await encryptSessionKey({ privKey: privKeyBytes, passphrase: params.passphrase, ttlMs });
+    safeLocalStorage.setItem(SES_V1_KEY, JSON.stringify(encPayload));
+    // Clear any raw session
+    safeSessionStorage.removeItem(SES_RAW_KEY);
+  } else {
+    // Ephemeral raw session in sessionStorage
+    const expiry = Date.now() + ttlMs;
+    safeSessionStorage.setItem(SES_RAW_KEY, JSON.stringify({ priv: "0x" + bytesToHex(privKeyBytes), exp: expiry }));
+  }
+
   pubsub.emit('routerChanged', getRouterState());
   return { sessionAddress: _sessionAccount.address };
 }
 
 export async function initClientFromSession(passphrase: string) {
-  const raw = safeLocalStorage.getItem(SES_AUTH_KEY);
-  if (!raw) return false;
+  // First: check raw ephemeral session
+  const rawEphemeral = safeSessionStorage.getItem(SES_RAW_KEY);
+  if (rawEphemeral) {
+    try {
+      const { priv, exp } = JSON.parse(rawEphemeral || '{}');
+      if (priv && exp && Date.now() < Number(exp)) {
+        _sessionAccount = glCreateAccount(priv as `0x${string}`);
+        _primaryOnchainEngine = 'session';
+        const config: any = { chain: studionet, account: _sessionAccount };
+        if (_endpoint) config.endpoint = _endpoint;
+        const client = createClient(config);
+        await client.initializeConsensusSmartContract();
+        pubsub.emit('routerChanged', getRouterState());
+        return true;
+      }
+    } catch (e) {
+      console.warn('Failed to load raw session:', e);
+    }
+  }
+
+  // Else: encrypted session in localStorage
+  const rawNew = safeLocalStorage.getItem(SES_V1_KEY);
+  if (!rawNew) return false;
   try {
-    const payload = JSON.parse(raw);
-    const json = await decryptString(payload, passphrase);
-    const { seed, expiry, evm } = JSON.parse(json);
-    if (!seed || !expiry || Date.now() > Number(expiry)) return false;
-    _sessionAccount = glCreateAccount(seed as `0x${string}`);
-    _externalEvmAddress = validateAddress(evm);
+    const payload: EncryptedSessionPayload = JSON.parse(rawNew);
+    const privBytes = await decryptSessionKey({ payload, passphrase });
+    const privHex = ("0x" + bytesToHex(privBytes)) as `0x${string}`;
+    _sessionAccount = glCreateAccount(privHex);
     _primaryOnchainEngine = 'session';
+    const config: any = { chain: studionet, account: _sessionAccount };
+    if (_endpoint) config.endpoint = _endpoint;
+    const client = createClient(config);
+    await client.initializeConsensusSmartContract();
     pubsub.emit('routerChanged', getRouterState());
     return true;
-  } catch {
+  } catch (e) {
+    console.error('initClientFromSession (encrypted) failed:', e);
     return false;
   }
 }
@@ -412,6 +489,7 @@ export function revokeSession() {
   _sessionAccount = null;
   _externalEvmAddress = undefined;
   safeLocalStorage.removeItem(SES_AUTH_KEY);
+  safeLocalStorage.removeItem(SES_V1_KEY);
   if (!_localAccount) _primaryOnchainEngine = null; else _primaryOnchainEngine = 'local';
   pubsub.emit('routerChanged', getRouterState());
 }
@@ -419,36 +497,45 @@ export function revokeSession() {
 // ------------------- IO Wrappers -------------------
 
 export async function read(method: string, args: any[] = []) {
-  const client = makeClient();
-  if (!client) {
-    throw new Error('No client available');
-  }
+  const client = makeClient({ allowReadOnly: true });
   
-  const address = (process.env.NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x2146690DCB6b857e375cA51D449e4400570e7c76') as `0x${string}`;
-  console.log('Reading contract:', { method, args, address, endpoint: _endpoint });
+  const resolvedAddr = process.env.NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xA3E91f209D40949A23d5b54e8A4949E578fdeB0E';
+  const address = normalizeAddress(resolvedAddr);
+  console.log('Reading contract:', { method, args, address, endpoint: _endpoint, chain: 'studionet', envAddr: resolvedAddr });
   
   try {
-    // Initialize consensus smart contract first
-    await client.initializeConsensusSmartContract();
-    
-    return await client.readContract({ 
-      address, 
-      functionName: method, 
-      args 
-    });
+    // Try direct read first
+    return await client.readContract({ address, functionName: method, args });
   } catch (error) {
-    console.error('Error fetching gen_call from GenLayer RPC:', error);
-    throw error;
+    console.warn('Direct read failed, initializing consensus contract and retrying...', error);
+    try {
+      await client.initializeConsensusSmartContract();
+      const result = await client.readContract({ address, functionName: method, args });
+      return result;
+    } catch (err2) {
+      console.error('Error fetching gen_call from GenLayer RPC after init:', err2);
+      try {
+        const schema = await client.getContractSchema({ address });
+        console.log('Contract schema (diagnostic):', schema);
+      } catch (e) {
+        console.warn('Failed to fetch contract schema for diagnostics:', e);
+      }
+      throw err2;
+    }
   }
 }
 
 export async function writeWithFinality(method: string, args: any[] = [], opts?: { retries?: number; interval?: number; status?: any }) {
-  const client = makeClient();
+  // Writes require an account; session or local
+  if (!_localAccount && !_sessionAccount) {
+    throw new Error('No account available for write operation');
+  }
+  const client = makeClient({ allowReadOnly: false });
   if (!client) {
     throw new Error('No client available');
   }
   
-  const address = (process.env.NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x2146690DCB6b857e375cA51D449e4400570e7c76') as `0x${string}`;
+  const address = normalizeAddress(process.env.NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS || process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0xA3E91f209D40949A23d5b54e8A4949E578fdeB0E');
   console.log('Writing contract:', { method, args, address, endpoint: _endpoint });
   
   try {
@@ -493,4 +580,14 @@ export async function waitForTransactionReceipt(params: { hash: string; status?:
 export async function appealTransaction(params: { txId: string }) {
   const client = makeClient();
   return client.appealTransaction({ txId: params.txId as any });
+}
+
+// Utility to verify contract address is valid and reachable on studionet
+export async function verifyContractAddress(address?: `0x${string}`) {
+  const client = makeClient({ allowReadOnly: true });
+  const addr = address || (process.env.NEXT_PUBLIC_GENLAYER_CONTRACT_ADDRESS as `0x${string}`);
+  if (!addr) throw new Error('Missing contract address');
+  await client.initializeConsensusSmartContract();
+  const schema = await client.getContractSchema({ address: addr });
+  return schema;
 }
