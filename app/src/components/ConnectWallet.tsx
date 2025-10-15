@@ -159,7 +159,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     setLoading(true)
     try {
       const account = await createAccountSecure(createPass)
-      console.log('Wallet created successfully:', account);
+      // Safe log without exposing secrets
+      console.log('Wallet created successfully');
       
       // Force set connectedAddr immediately
       if (account?.address) {
@@ -202,7 +203,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     setLoading(true)
     try {
       const account = await importMnemonicSecure(importMnemonic.trim(), importPass)
-      console.log('Wallet imported successfully:', account);
+      // Safe log without exposing secrets
+      console.log('Wallet imported successfully');
       
       if (account?.address) {
         setConnectedAddr(account.address)
@@ -226,7 +228,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     setLoading(true)
     try {
       const account = await importPrivKeySecure(importPrivKey.trim(), importPrivPass)
-      console.log('Wallet imported successfully:', account);
+      // Safe log without exposing secrets
+      console.log('Wallet imported successfully');
       
       if (account?.address) {
         setConnectedAddr(account.address)
@@ -250,7 +253,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     setLoading(true)
     try {
       const account = await unlockWithPassphrase(unlockPass)
-      console.log('Wallet unlocked successfully:', account);
+      // Safe log without exposing secrets
+      console.log('Wallet unlocked successfully');
       
       if (account?.address) {
         setConnectedAddr(account.address)
@@ -409,8 +413,8 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
 
   // Effects
   useEffect(() => {
-    const unsubscribe = onAccountChanged((address) => {
-      console.log('Account changed:', address);
+    const unsubscribe = onAccountChanged(({ address }: { address: string }) => {
+      console.log('Account changed');
       setConnectedAddr(address)
       if (address) {
         onConnected?.(address)
