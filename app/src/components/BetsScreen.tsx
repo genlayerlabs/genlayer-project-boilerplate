@@ -442,7 +442,7 @@ const BetsScreen = memo(function BetsScreen() {
             <Typography variant="h6" gutterBottom>
               Transaction Status
             </Typography>
-            <Stepper activeStep={txStatus === 'requested' ? 0 : txStatus === 'accepted' ? 1 : txStatus === 'finalized' ? 2 : 3}>
+            <Stepper activeStep={txStatus === 'requested' ? 0 : txStatus === 'accepted' ? 1 : 2}>
               <Step>
                 <StepLabel>Requested</StepLabel>
               </Step>

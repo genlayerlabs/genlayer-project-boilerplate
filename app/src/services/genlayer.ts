@@ -186,21 +186,14 @@ export function testCodeLoaded() {
 }
 
 export async function unlockWithPassphrase(passphrase: string) {
-  console.log('🔓 UNLOCK DEBUG START - NEW CODE LOADED!');
-  console.log('Looking for ENC_KEY:', ENC_KEY);
-  console.log('Looking for MNEMONIC_KEY:', MNEMONIC_KEY);
-  
   // First try to unlock from encrypted private key
   const rawPrivKey = safeLocalStorage.getItem(ENC_KEY);
-  console.log('Raw private key found:', !!rawPrivKey);
   if (rawPrivKey) {
     try {
       const payload = JSON.parse(rawPrivKey);
       const priv = await decryptString(payload, passphrase);
-      console.log('Successfully unlocked from private key');
       return setAccountFromPrivKey(priv);
     } catch (error) {
-      console.log('Failed to unlock from private key, trying mnemonic...', error);
     }
   }
   
@@ -237,7 +230,6 @@ export async function unlockWithPassphrase(passphrase: string) {
   
   // Ensure private key has 0x prefix
   const privWithPrefix = wallet.privateKey.startsWith('0x') ? wallet.privateKey : `0x${wallet.privateKey}`;
-  console.log('=== UNLOCK DEBUG END - SUCCESS ===');
   return setAccountFromPrivKey(privWithPrefix);
 }
 

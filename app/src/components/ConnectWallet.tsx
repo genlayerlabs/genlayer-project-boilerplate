@@ -325,14 +325,6 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
     }
   }, [exportedMnemonic, showSnackbar])
 
-  const testMnemonicStorage = useCallback(() => {
-    console.log('=== Testing Mnemonic Storage ===');
-    console.log('localStorage mnemonic:', safeLocalStorage.getItem('gl.enc.mnemonic.v1'));
-    console.log('sessionStorage mnemonic:', safeSessionStorage.getItem('gl.enc.mnemonic.v1'));
-    console.log('getEncryptedMnemonic result:', getEncryptedMnemonic());
-    console.log('=== End Test ===');
-  }, [])
-
   // EVM handlers
   const handleEvmConnect = useCallback(async () => {
     try {
@@ -473,26 +465,6 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
                 Recovery phrase not available for generated wallets
               </Typography>
             )}
-            {/* Debug info */}
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, fontSize: '0.7rem' }}>
-              Debug: Has mnemonic: {getEncryptedMnemonic() ? 'Yes' : 'No'}
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={testMnemonicStorage}
-              sx={{ mt: 1 }}
-            >
-              Test Storage
-            </Button>
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => testCodeLoaded()}
-              sx={{ mt: 1, ml: 1 }}
-            >
-              Test Code Loaded
-            </Button>
           </Box>
 
           {/* Export passphrase dialog */}
@@ -514,9 +486,6 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
                   lineHeight: 1.5
                 }}>
                   {exportedMnemonic || 'No mnemonic available'}
-                </Box>
-                <Box sx={{ mt: 1, fontSize: '0.75rem', color: 'text.secondary' }}>
-                  Debug: exportedMnemonic = {JSON.stringify(exportedMnemonic)}
                 </Box>
                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                   <Button
