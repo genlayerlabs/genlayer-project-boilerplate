@@ -2,10 +2,9 @@
 
 import { Box, Typography } from '@mui/material'
 import React from 'react'
-import { AccountProvider } from '../../src/store/account'
-
-import ConnectWallet from '../../src/components/ConnectWallet'
-import BetsScreen from '../../src/components/BetsScreen'
+import { AccountProvider } from '@/store/account'
+import ConnectWallet from '@/components/ConnectWallet'
+import BetsScreen from '@/components/BetsScreen'
 
 export default function BetsPage() {
   return (

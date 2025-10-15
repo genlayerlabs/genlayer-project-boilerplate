@@ -1,11 +1,11 @@
-# GenLayer Football Bets - Next.js Migration
+# GenLayer Football Bets - Next.js
 
 A decentralized football betting application built with Next.js 14, TypeScript, and GenLayer blockchain.
 
 ## Features
 
 - **Secure Local-First Wallet**: AES-GCM encryption with PBKDF2 (120k iterations)
-- **Ethers v6 Integration**: BIP39 mnemonic generation and private key management
+- **EVM Session Authorization**: EIP-712 typed data signing with auto-session
 - **GenLayer Smart Contract**: AI-powered match resolution with BBC Sports integration
 - **Real-time Updates**: Pub/Sub pattern for reactive account management
 - **Form Validation**: Client-side validation with duplicate bet prevention
@@ -21,7 +21,7 @@ A decentralized football betting application built with Next.js 14, TypeScript, 
 2. **Environment Setup**
    Create `.env.local`:
    ```
-   NEXT_PUBLIC_CONTRACT_ADDRESS="0x2146690DCB6b857e375cA51D449e4400570e7c76"
+   NEXT_PUBLIC_CONTRACT_ADDRESS="0xA3E91f209D40949A23d5b54e8A4949E578fdeB0E"
    NEXT_PUBLIC_STUDIO_URL="https://studio.genlayer.com/api"
    ```
 
@@ -31,37 +31,22 @@ A decentralized football betting application built with Next.js 14, TypeScript, 
    ```
 
 4. **Open Application**
-   Navigate to `http://localhost:5173`
+   Navigate to `http://localhost:3000`
 
 ## Architecture
 
 ### Core Components
 
-- **ConnectWallet**: Wallet management (create/import/unlock/export)
+- **ConnectWallet**: Wallet management (create/import/unlock/export) with EVM session support
 - **BetsScreen**: Betting interface with leaderboard
-- **AddressLabel**: Shortened address display
+- **AppShell**: MUI theme provider and layout wrapper
 - **TxStatus**: Transaction lifecycle tracking
-## Schema Validation
-
-Run:
-
-```bash
-npm run schema:check
-```
-
-It reads `contracts/football_bets.py`, asks GenLayer for a schema for code, verifies the presence of:
-- `create_bet(game_date, team1, team2, predicted_winner)`
-- `resolve_bet(bet_id)`
-- `get_bets()`
-- `get_points()`
-- `get_player_points(player_address)`
-
-On success, writes a canonical schema hash to `config/schema.json`.
 
 ### Services
 
-- **genlayer.ts**: Account lifecycle and client management
+- **genlayer.ts**: Account lifecycle, client management, and session authorization
 - **FootballBets.ts**: Smart contract interaction wrapper
+- **crypto/sessionKey.ts**: EIP-712 session key derivation and encryption
 - **crypto.ts**: WebCrypto AES-GCM/PBKDF2 implementation
 - **localWallet.ts**: Ethers v6 wallet utilities
 
@@ -74,15 +59,31 @@ On success, writes a canonical schema hash to `config/schema.json`.
 
 - **AES-GCM Encryption**: 256-bit keys for private key storage
 - **PBKDF2 Key Derivation**: 120,000 iterations for passphrase-based encryption
+- **EIP-712 Session Keys**: HKDF-SHA256 derivation from EVM signatures
 - **No Buffer Usage**: Pure WebCrypto API for browser compatibility
-- **Session Management**: Secure session storage for development
+- **Session Management**: Encrypted sessions with TTL support
 
 ## Smart Contract Integration
 
-- **Contract Address**: `0x2146690DCB6b857e375cA51D449e4400570e7c76`
+- **Contract Address**: `0xA3E91f209D40949A23d5b54e8A4949E578fdeB0E`
 - **Studio Endpoint**: `https://studio.genlayer.com/api`
 - **AI Resolution**: Automatic match result fetching from BBC Sports
 - **Deterministic Results**: Consistent AI output across nodes
+
+## Wallet Features
+
+### Local Wallet
+- Create new wallet with BIP39 mnemonic
+- Import from mnemonic phrase or private key
+- Secure passphrase-based encryption
+- Export recovery phrase with verification
+
+### EVM Session Authorization
+- Connect external EVM wallet (MetaMask, etc.)
+- EIP-712 typed data signing for session authorization
+- Auto-session after wallet connection
+- HKDF-SHA256 session key derivation
+- Encrypted session storage with TTL
 
 ## QA Checklist
 
@@ -93,6 +94,13 @@ On success, writes a canonical schema hash to `config/schema.json`.
 - [ ] Unlock existing → decrypts with passphrase → connects account
 - [ ] Export recovery phrase → requires passphrase → displays securely
 - [ ] Disconnect → clears all data → returns to disconnected state
+
+### ✅ EVM Session Operations
+- [ ] Connect EVM wallet → displays address → enables session authorization
+- [ ] Authorize session → signs EIP-712 → derives session key → auto-connects
+- [ ] Auto-session → triggers automatically after EVM connection
+- [ ] Session TTL → expires after configured time → requires re-authorization
+- [ ] Cross-locking → disables Local when EVM connected and vice versa
 
 ### ✅ Betting Operations
 - [ ] Create bet → validates form → prevents duplicates → submits transaction
@@ -105,6 +113,7 @@ On success, writes a canonical schema hash to `config/schema.json`.
 - [ ] Duplicate bet → prevents submission
 - [ ] Unfinished match → shows "Game not finished" error
 - [ ] Network errors → graceful fallback with user feedback
+- [ ] Signature rejection → user-friendly error message
 
 ### ✅ Transaction Status
 - [ ] Pending → Accepted → Finalized progression
@@ -127,18 +136,20 @@ This application has been migrated from Vue 3 to Next.js 14 with the following c
 - **State Management**: Vue Reactivity → React Context + PubSub
 - **Components**: Vue SFC → React Functional Components
 - **Build Tool**: Vite → Next.js built-in bundler
-- **Port**: Default 3000 → Custom 5173 (to match Vite)
+- **Port**: Default 3000 (Next.js standard)
+- **Project Structure**: Clean `src/` organization with alias imports
 
-All core functionality has been preserved:
+All core functionality has been preserved and enhanced:
 - Secure wallet system with AES-GCM encryption
 - GenLayer smart contract integration
 - Form validation and duplicate prevention
 - Transaction status tracking
 - Real-time data updates
+- **NEW**: EVM session authorization with EIP-712
 
 ## Future Enhancements
 
-- **MetaMask Integration**: External wallet support for identity/signature
+- **Hardware Wallet Integration**: Ledger/Trezor support
 - **Batch Operations**: Resolve multiple bets simultaneously
 - **Advanced Validation**: Team name normalization and alias support
 - **Caching**: Reduce repeated web fetches for match results
@@ -149,8 +160,9 @@ All core functionality has been preserved:
 - All crypto operations are client-side only (`"use client"`)
 - No SSR for wallet/crypto components
 - TypeScript strict mode enabled
-- Tailwind CSS for styling
+- MUI theme system for consistent styling
 - Next.js App Router architecture
+- Clean project structure with `src/app/` organization
 
 ## Troubleshooting
 
@@ -160,6 +172,7 @@ All core functionality has been preserved:
 2. **RPC Errors**: Check contract address and studio endpoint configuration
 3. **Encryption Failures**: Verify passphrase strength and browser compatibility
 4. **Transaction Timeouts**: Increase retry count in FootballBets service
+5. **EVM Connection Issues**: Check MetaMask installation and network configuration
 
 ### Debug Mode
 
@@ -167,4 +180,4 @@ Enable debug logging by setting `NODE_ENV=development` and check browser console
 
 ---
 
-**Status**: ✅ Production Ready - All core features implemented and tested
+**Status**: ✅ Production Ready - All core features implemented and tested with EVM session support
