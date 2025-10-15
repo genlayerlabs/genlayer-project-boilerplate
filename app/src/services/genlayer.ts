@@ -91,11 +91,8 @@ function validatePrivateKey(privKey: string): `0x${string}` {
 // Local wallet functions
 export function setAccountFromPrivKey(privHex: string) {
   try {
-    console.log('Setting account from private key:', privHex);
     const validatedKey = validatePrivateKey(privHex);
-    console.log('Validated private key:', validatedKey);
     _localAccount = glCreateAccount(validatedKey);
-    console.log('Created account:', _localAccount);
     safeLocalStorage.setItem(LAST_ADDR, _localAccount.address);
     pubsub.emit('accountChanged', { address: _localAccount.address });
     pubsub.emit('routerChanged', getRouterState());
@@ -120,14 +117,12 @@ export function getEncryptedMnemonic(): string | null {
   // Check localStorage first (encrypted with passphrase)
   const encrypted = safeLocalStorage.getItem(MNEMONIC_KEY);
   if (encrypted) {
-    console.log('Found encrypted mnemonic in localStorage:', encrypted);
     return encrypted;
   }
   
   // Check sessionStorage (plain mnemonic for session mode)
   const session = safeSessionStorage.getItem(MNEMONIC_KEY);
   if (session) {
-    console.log('Found session mnemonic in sessionStorage:', session);
     return session;
   }
   
@@ -140,12 +135,9 @@ export async function createAccountSecure(passphrase?: string) {
     // Generate mnemonic first, then derive private key from it
     const { createNewWallet } = await import('../lib/localWallet');
     const wallet = createNewWallet();
-    console.log('Generated mnemonic:', wallet.mnemonic);
-    console.log('Generated private key:', wallet.privateKey);
     
     // Ensure private key has 0x prefix
     const privWithPrefix = wallet.privateKey.startsWith('0x') ? wallet.privateKey : `0x${wallet.privateKey}`;
-    console.log('Private key with prefix:', privWithPrefix);
     
     setAccountFromPrivKey(privWithPrefix);
     
@@ -162,7 +154,6 @@ export async function createAccountSecure(passphrase?: string) {
         iv: '',
         iterations: 0
       };
-      console.log('Saving session mnemonic payload:', mnemonicPayload);
       safeSessionStorage.setItem(MNEMONIC_KEY, JSON.stringify(mnemonicPayload));
     }
     console.log('Account created successfully:', _localAccount);
@@ -215,34 +206,26 @@ export async function unlockWithPassphrase(passphrase: string) {
   
   // If no private key or failed, try to unlock from encrypted mnemonic (localStorage first)
   let rawMnemonic = safeLocalStorage.getItem(MNEMONIC_KEY);
-  console.log('Raw mnemonic (localStorage) found:', !!rawMnemonic);
   if (!rawMnemonic) {
     // Fallback to sessionStorage (session-mode wallets)
     rawMnemonic = safeSessionStorage.getItem(MNEMONIC_KEY);
-    console.log('Raw mnemonic (sessionStorage) found:', !!rawMnemonic);
   }
   
   if (!rawMnemonic) {
-    console.log('No encrypted key found in either location');
     throw new Error('No encrypted key found');
   }
   
   const payload = JSON.parse(rawMnemonic);
-  console.log('Mnemonic payload structure:', payload);
   
   // Detect encrypted vs session-mode payload
   let mnemonic: string;
   const isEncrypted = !!(payload && payload.salt && payload.iv && payload.data && payload.salt !== '' && payload.iv !== '');
   if (isEncrypted) {
-    console.log('Detected encrypted mnemonic payload, attempting decryption...');
     mnemonic = await decryptString(payload, passphrase);
-    console.log('Decrypted mnemonic successfully');
   } else if (payload && typeof payload.encrypted === 'string' && payload.encrypted.length > 0) {
-    console.log('Detected session-mode mnemonic payload (plain).');
     mnemonic = payload.encrypted;
   } else if (typeof payload === 'string') {
     // Legacy plain string stored
-    console.log('Detected legacy plain mnemonic string.');
     mnemonic = payload;
   } else {
     throw new Error('Unsupported mnemonic payload format');

@@ -39,9 +39,11 @@ export class FootballBets {
       const bets = await read('get_bets', []);
       console.log('Raw bets data:', bets)
 
-      const outerEntries = (bets && typeof (bets as any).entries === 'function')
-        ? Array.from((bets as any).entries())
-        : Object.entries(bets as Record<string, any>);
+      // Guard against null/undefined bets
+      const safeBets = bets || {};
+      const outerEntries = (safeBets && typeof (safeBets as any).entries === 'function')
+        ? Array.from((safeBets as any).entries())
+        : Object.entries(safeBets as Record<string, any>);
 
       const formattedBets = outerEntries.flatMap((entry: any) => {
         const [owner, bet] = entry as [string, any];
@@ -106,9 +108,11 @@ export class FootballBets {
       const points = await read('get_points', []);
       console.log('Raw leaderboard data:', points)
 
-      const pointEntries = (points && typeof (points as any).entries === 'function')
-        ? Array.from((points as any).entries())
-        : Object.entries(points as Record<string, any>);
+      // Guard against null/undefined points
+      const safePoints = points || {};
+      const pointEntries = (safePoints && typeof (safePoints as any).entries === 'function')
+        ? Array.from((safePoints as any).entries())
+        : Object.entries(safePoints as Record<string, any>);
 
       const formattedLeaderboard = pointEntries
         .map((entry: any) => {

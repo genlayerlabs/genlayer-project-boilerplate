@@ -9,7 +9,7 @@
     "useDefineForClassFields": false,
     "baseUrl": "app",
     "paths": {
-      "@/*": ["*"]
+      "@/*": ["src/*"]
     }
   }
 }

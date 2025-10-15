@@ -283,27 +283,18 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
 
   const confirmExport = useCallback(async () => {
     try {
-      console.log('Attempting to export recovery phrase...');
       const encryptedMnemonic = getEncryptedMnemonic()
-      console.log('Encrypted mnemonic found:', !!encryptedMnemonic);
       
       if (!encryptedMnemonic) {
         showSnackbar('No mnemonic found', 'error')
         return
       }
 
-      console.log('Decrypting mnemonic...');
       const payload = JSON.parse(encryptedMnemonic)
-      console.log('Payload structure:', payload);
-      console.log('Has salt:', !!payload.salt, 'Salt value:', payload.salt);
-      console.log('Has iv:', !!payload.iv, 'IV value:', payload.iv);
-      console.log('Has data:', !!payload.data, 'Data value:', payload.data);
-      console.log('Has encrypted:', !!payload.encrypted, 'Encrypted value:', payload.encrypted);
       
       // Check if it's encrypted (has salt, iv, data) or plain (session mode)
       let mnemonic: string;
       if (payload.salt && payload.iv && payload.data && payload.salt !== '' && payload.iv !== '') {
-        console.log('Detected encrypted mnemonic, attempting decryption...');
         // Encrypted mnemonic - need passphrase
         if (!exportPassphrase) {
           showSnackbar('Passphrase required for encrypted wallet', 'error')
@@ -311,15 +302,9 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
         }
         mnemonic = await decryptString(payload, exportPassphrase)
       } else {
-        console.log('Detected session mode mnemonic...');
         // Plain mnemonic (session mode) - no passphrase needed
         mnemonic = payload.encrypted;
-        console.log('Using session mode mnemonic:', mnemonic);
-        console.log('Payload encrypted field:', payload.encrypted);
-        console.log('Payload type:', typeof payload.encrypted);
       }
-      
-      console.log('Decrypted mnemonic:', mnemonic);
       
       setExportedMnemonic(mnemonic)
       setShowMnemonic(true)
@@ -331,9 +316,6 @@ const ConnectWallet = memo(function ConnectWallet({ onConnected }: ConnectWallet
   }, [exportPassphrase, showSnackbar])
 
   const copyToClipboard = useCallback(async () => {
-    console.log('Copying mnemonic:', exportedMnemonic);
-    console.log('Mnemonic type:', typeof exportedMnemonic);
-    console.log('Mnemonic length:', exportedMnemonic?.length);
     try {
       await navigator.clipboard.writeText(exportedMnemonic)
       showSnackbar('Copied to clipboard!')

@@ -68,10 +68,24 @@ async function hkdfSha256(ikm: Uint8Array, salt: Uint8Array, info: Uint8Array, l
   return new Uint8Array(bits)
 }
 
+// secp256k1 curve order constant
+const SECP256K1_ORDER = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141')
+
 function isValidSecpScalar(bytes: Uint8Array): boolean {
   if (bytes.length !== 32) return false
-  // Quick check: not all zeros
-  return bytes.some(b => b !== 0)
+  
+  // Check for all zeros
+  if (!bytes.some(b => b !== 0)) return false
+  
+  // Convert to BigInt for comparison with curve order
+  // Convert bytes to big-endian BigInt
+  let value = BigInt(0)
+  for (let i = 0; i < 32; i++) {
+    value = value * BigInt(256) + BigInt(bytes[i])
+  }
+  
+  // Must be strictly less than secp256k1 order
+  return value < SECP256K1_ORDER
 }
 
 export async function deriveSessionSeedFromSignature(params: {
@@ -90,7 +104,15 @@ export async function deriveSessionSeedFromSignature(params: {
 
   let counter = 0
   while (true) {
-    const ctr = new Uint8Array([counter])
+    // Encode counter as variable-length bytes (supports > 256 iterations)
+    const ctrBytes: number[] = []
+    let ctrValue = counter
+    while (ctrValue > 0) {
+      ctrBytes.unshift(ctrValue & 0xFF)
+      ctrValue = Math.floor(ctrValue / 256)
+    }
+    const ctr = new Uint8Array(ctrBytes.length > 0 ? ctrBytes : [0])
+    
     const infoWithCtr = new Uint8Array(info.length + ctr.length)
     infoWithCtr.set(info, 0)
     infoWithCtr.set(ctr, info.length)

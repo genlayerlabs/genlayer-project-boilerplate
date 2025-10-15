@@ -169,10 +169,10 @@ const BetsScreen = memo(function BetsScreen() {
     }
 
     setTxStatus('requested')
-    setTxHash(betId)
 
     try {
       const hash = await footballBets.resolveBetTx(betId)
+      setTxHash(hash)
       setTxStatus('accepted')
       showSnackbar('Bet resolution submitted! Waiting for finalization...', 'success')
 
@@ -269,19 +269,23 @@ const BetsScreen = memo(function BetsScreen() {
         
         {/* Action buttons */}
         <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => setCreateDialogOpen(true)}
-            disabled={!canWriteOnchain}
-          >
-            Create Bet
-          </Button>
-          {!canWriteOnchain && (
+          {canWriteOnchain ? (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => setCreateDialogOpen(true)}
+            >
+              Create Bet
+            </Button>
+          ) : (
             <Tooltip title="Connect wallet or authorize session to create bets">
               <span>
-                <Button variant="outlined" disabled>
-                  Create Bet (Connect Wallet)
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  disabled
+                >
+                  Create Bet
                 </Button>
               </span>
             </Tooltip>
