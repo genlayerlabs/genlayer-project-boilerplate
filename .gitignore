@@ -15,3 +15,5 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+deploy/deployScript.compiled.js
+/context
