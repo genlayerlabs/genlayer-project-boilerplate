@@ -28,7 +28,7 @@ class FootballBets(gl.Contract):
 
     def _check_match(self, resolution_url: str, team1: str, team2: str) -> dict:
         def get_match_result() -> str:
-            web_data = gl.get_webpage(resolution_url, mode="text")
+            web_data = gl.nondet.web.render(resolution_url, mode="text")
 
             task = f"""
 Extract the match result for:
@@ -48,10 +48,10 @@ nothing else. Don't include any other words or characters,
 your output must be only JSON without any formatting prefix or suffix.
 This result should be perfectly parsable by a JSON parser without errors.
         """
-            result = gl.exec_prompt(task).replace("```json", "").replace("```", "")
-            return json.dumps(json.loads(result), sort_keys=True)
+            result = gl.nondet.exec_prompt(task, response_format="json")
+            return json.dumps(result, sort_keys=True)
 
-        result_json = json.loads(gl.eq_principle_strict_eq(get_match_result))
+        result_json = json.loads(gl.eq_principle.strict_eq(get_match_result))
         return result_json
 
     @gl.public.write
