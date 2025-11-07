@@ -74,12 +74,12 @@ export function AccountPanel() {
     return (
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button className="glass-button-primary">
+          <Button variant="gradient">
             <User className="w-4 h-4 mr-2" />
             Connect Wallet
           </Button>
         </DialogTrigger>
-        <DialogContent className="glass-card border-2">
+        <DialogContent className="brand-card border-2">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Connect to GenLayer</DialogTitle>
             <DialogDescription>
@@ -90,7 +90,8 @@ export function AccountPanel() {
           <div className="space-y-4 mt-4">
             <Button
               onClick={handleCreateAccount}
-              className="w-full glass-button-primary h-14 text-lg"
+              variant="gradient"
+              className="w-full h-14 text-lg"
             >
               <User className="w-5 h-5 mr-2" />
               Create New Account
@@ -123,7 +124,8 @@ export function AccountPanel() {
               )}
               <Button
                 onClick={handleImportAccount}
-                className="w-full glass-button-secondary"
+                variant="secondary"
+                className="w-full"
                 disabled={!importKey.trim()}
               >
                 <Upload className="w-4 h-4 mr-2" />
@@ -146,7 +148,7 @@ export function AccountPanel() {
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <div className="flex items-center gap-4">
-        <div className="glass-card px-4 py-2 flex items-center gap-3">
+        <div className="brand-card px-4 py-2 flex items-center gap-3">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-accent" />
             <AddressDisplay address={address} maxLength={12} />
@@ -159,13 +161,13 @@ export function AccountPanel() {
         </div>
 
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="glass-button-secondary">
+          <Button variant="outline" size="sm">
             <Key className="w-4 h-4" />
           </Button>
         </DialogTrigger>
       </div>
 
-      <DialogContent className="glass-card border-2">
+      <DialogContent className="brand-card border-2">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Account Settings</DialogTitle>
           <DialogDescription>
@@ -174,14 +176,14 @@ export function AccountPanel() {
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          <div className="glass-card p-4 space-y-2">
+          <div className="brand-card p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Your Address</p>
             <div className="flex items-center justify-between">
               <code className="text-sm font-mono">{address}</code>
             </div>
           </div>
 
-          <div className="glass-card p-4 space-y-2">
+          <div className="brand-card p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Your Points</p>
             <p className="text-2xl font-bold text-accent">{points}</p>
           </div>
@@ -189,7 +191,7 @@ export function AccountPanel() {
           <div className="space-y-2">
             <Button
               onClick={handleCopyPrivateKey}
-              className="w-full glass-button-secondary"
+              className="w-full"
               variant="outline"
             >
               <Key className="w-4 h-4 mr-2" />
@@ -198,7 +200,7 @@ export function AccountPanel() {
 
             <Button
               onClick={handleExportPrivateKey}
-              className="w-full glass-button-secondary"
+              className="w-full"
               variant="outline"
             >
               <Download className="w-4 h-4 mr-2" />
@@ -209,7 +211,7 @@ export function AccountPanel() {
           <div className="mt-6 pt-4 border-t border-white/10">
             <Button
               onClick={handleDisconnect}
-              className="w-full glass-button-secondary text-destructive hover:text-destructive"
+              className="w-full text-destructive hover:text-destructive"
               variant="outline"
             >
               <LogOut className="w-4 h-4 mr-2" />

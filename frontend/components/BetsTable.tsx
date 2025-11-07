@@ -18,12 +18,18 @@ export function BetsTable() {
       alert("Please connect your wallet to resolve bets");
       return;
     }
-    resolveBet(typeof betId === 'string' ? parseInt(betId) : betId);
+
+    // Confirmation popup
+    const confirmed = confirm("Are you sure you want to resolve this bet? This action will determine the winner.");
+
+    if (confirmed) {
+      resolveBet(typeof betId === 'string' ? parseInt(betId) : betId);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="glass-card p-8 flex items-center justify-center">
+      <div className="brand-card p-8 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-accent" />
           <p className="text-sm text-muted-foreground">Loading bets...</p>
@@ -34,7 +40,7 @@ export function BetsTable() {
 
   if (isError) {
     return (
-      <div className="glass-card p-8">
+      <div className="brand-card p-8">
         <div className="text-center">
           <p className="text-destructive">Failed to load bets. Please try again.</p>
         </div>
@@ -44,7 +50,7 @@ export function BetsTable() {
 
   if (!bets || bets.length === 0) {
     return (
-      <div className="glass-card p-12">
+      <div className="brand-card p-12">
         <div className="text-center space-y-3">
           <Trophy className="w-16 h-16 mx-auto text-muted-foreground opacity-30" />
           <h3 className="text-xl font-bold">No Bets Yet</h3>
@@ -57,7 +63,7 @@ export function BetsTable() {
   }
 
   return (
-    <div className="glass-card p-6 overflow-hidden">
+    <div className="brand-card p-6 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -179,7 +185,7 @@ function BetRow({ bet, currentAddress, onResolve, isResolving }: BetRowProps) {
             onClick={() => onResolve(bet.id)}
             disabled={isResolving}
             size="sm"
-            className="glass-button-primary"
+            variant="gradient"
           >
             {isResolving ? (
               <>

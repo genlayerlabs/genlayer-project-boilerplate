@@ -19,7 +19,9 @@ export default function HomePage() {
               Football Prediction Betting
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-              AI-powered football match predictions on GenLayer blockchain. Create bets, make predictions, and compete for points.
+              AI-powered football match predictions on GenLayer blockchain.
+              <br />
+              Create bets, make predictions, and compete for points.
             </p>
           </div>
 
@@ -90,6 +92,14 @@ export default function HomePage() {
                 className="hover:text-accent transition-colors"
               >
                 Docs
+              </a>
+              <a
+                href="https://github.com/genlayerlabs/genlayer-project-boilerplate"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-accent transition-colors"
+              >
+                GitHub
               </a>
           </div>
         </div>

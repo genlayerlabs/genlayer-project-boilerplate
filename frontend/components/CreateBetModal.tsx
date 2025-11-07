@@ -102,12 +102,12 @@ export function CreateBetModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button className="glass-button-primary" disabled={!isConnected}>
+        <Button variant="gradient" disabled={!isConnected}>
           <Plus className="w-4 h-4 mr-2" />
           Create Bet
         </Button>
       </DialogTrigger>
-      <DialogContent className="glass-card border-2 sm:max-w-[500px]">
+      <DialogContent className="brand-card border-2 sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold">Create Football Bet</DialogTitle>
           <DialogDescription>
@@ -119,7 +119,7 @@ export function CreateBetModal() {
           {/* Game Date */}
           <div className="space-y-2">
             <Label htmlFor="gameDate" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-4 h-4 !text-white" />
               Game Date
             </Label>
             <Input
@@ -241,8 +241,8 @@ export function CreateBetModal() {
           <div className="flex gap-3 pt-4">
             <Button
               type="button"
-              variant="outline"
-              className="flex-1 glass-button-secondary"
+              variant="secondary"
+              className="flex-1"
               onClick={() => setIsOpen(false)}
               disabled={isCreating}
             >
@@ -250,7 +250,8 @@ export function CreateBetModal() {
             </Button>
             <Button
               type="submit"
-              className="flex-1 glass-button-primary"
+              variant="gradient"
+              className="flex-1"
               disabled={isCreating}
             >
               {isCreating ? (

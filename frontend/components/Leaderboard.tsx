@@ -11,7 +11,7 @@ export function Leaderboard() {
 
   if (isLoading) {
     return (
-      <div className="glass-card p-6">
+      <div className="brand-card p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-accent" />
           Leaderboard
@@ -25,7 +25,7 @@ export function Leaderboard() {
 
   if (isError || !leaderboard) {
     return (
-      <div className="glass-card p-6">
+      <div className="brand-card p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-accent" />
           Leaderboard
@@ -39,7 +39,7 @@ export function Leaderboard() {
 
   if (leaderboard.length === 0) {
     return (
-      <div className="glass-card p-6">
+      <div className="brand-card p-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
           <Trophy className="w-5 h-5 text-accent" />
           Leaderboard
@@ -53,7 +53,7 @@ export function Leaderboard() {
   }
 
   return (
-    <div className="glass-card p-6">
+    <div className="brand-card p-6">
       <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
         <Trophy className="w-5 h-5 text-accent" />
         Leaderboard

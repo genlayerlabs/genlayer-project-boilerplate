@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AccountPanel } from "./AccountPanel";
 import { CreateBetModal } from "./CreateBetModal";
 import { useBets } from "@/lib/hooks/useFootballBets";
+import { Logo, LogoMark } from "./Logo";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -85,12 +86,10 @@ export function Navbar() {
             >
               {/* Left: Logo */}
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <svg className="w-6 h-6 text-accent" viewBox="0 0 97.76 91.93" xmlns="http://www.w3.org/2000/svg">
-                    <path fill="currentColor" d="M44.26 32.35L27.72 67.12L43.29 74.9L0 91.93L44.26 0L44.26 32.35ZM53.5 32.35L70.04 67.12L54.47 74.9L97.76 91.93L53.5 0L53.5 32.35ZM48.64 43.78L58.33 62.94L48.64 67.69L39.47 62.92L48.64 43.78Z"/>
-                  </svg>
-                  <span className="text-xl font-bold">GenLayer Football Market</span>
-                </div>
+                {/* Show mark only on mobile, full logo on desktop */}
+                <LogoMark size="md" className="flex md:hidden" />
+                <Logo size="md" className="hidden md:flex" />
+                <span className="text-lg md:text-xl font-bold ml-2">Football Market</span>
               </div>
 
               {/* Center: Stats */}
