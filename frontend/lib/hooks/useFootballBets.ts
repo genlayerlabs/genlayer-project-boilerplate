@@ -3,21 +3,28 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import FootballBets from "../contracts/FootballBets";
-import { getContractAddress, getStudioUrl, getCurrentAccount } from "../genlayer/client";
+import { getContractAddress, getStudioUrl } from "../genlayer/client";
 import { useWallet } from "../genlayer/wallet";
 import type { Bet, LeaderboardEntry } from "../contracts/types";
 
 /**
  * Hook to get the FootballBets contract instance
+ *
+ * Note: The contract instance is recreated whenever the wallet address changes.
+ * Read-only operations (getBets, getLeaderboard, etc.) work without a connected wallet.
+ * Write operations (createBet, resolveBet) require a connected wallet and will fail
+ * if the address is null. Defensive validation is added in the mutation hooks.
  */
 export function useFootballBetsContract() {
-  const { account } = useWallet();
+  const { address } = useWallet();
   const contractAddress = getContractAddress();
   const studioUrl = getStudioUrl();
 
   const contract = useMemo(() => {
-    return new FootballBets(contractAddress, account, studioUrl);
-  }, [contractAddress, account, studioUrl]);
+    // Contract instance is recreated when address changes to ensure
+    // the genlayer-js client is properly configured with the current account
+    return new FootballBets(contractAddress, address, studioUrl);
+  }, [contractAddress, address, studioUrl]);
 
   return contract;
 }
@@ -73,6 +80,7 @@ export function useLeaderboard() {
  */
 export function useCreateBet() {
   const contract = useFootballBetsContract();
+  const { address } = useWallet();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
 
@@ -88,6 +96,9 @@ export function useCreateBet() {
       team2: string;
       predictedWinner: string;
     }) => {
+      if (!address) {
+        throw new Error("Wallet not connected. Please connect your wallet to create a bet.");
+      }
       setIsCreating(true);
       return contract.createBet(gameDate, team1, team2, predictedWinner);
     },
@@ -117,12 +128,16 @@ export function useCreateBet() {
  */
 export function useResolveBet() {
   const contract = useFootballBetsContract();
+  const { address } = useWallet();
   const queryClient = useQueryClient();
   const [isResolving, setIsResolving] = useState(false);
   const [resolvingBetId, setResolvingBetId] = useState<number | null>(null);
 
   const mutation = useMutation({
     mutationFn: async (betId: number) => {
+      if (!address) {
+        throw new Error("Wallet not connected. Please connect your wallet to resolve a bet.");
+      }
       setIsResolving(true);
       setResolvingBetId(betId);
       return contract.resolveBet(betId);

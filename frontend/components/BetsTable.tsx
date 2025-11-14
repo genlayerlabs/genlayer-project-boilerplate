@@ -10,7 +10,7 @@ import type { Bet } from "@/lib/contracts/types";
 
 export function BetsTable() {
   const { data: bets, isLoading, isError } = useBets();
-  const { address } = useWallet();
+  const { address, isConnected, isLoading: isWalletLoading } = useWallet();
   const { resolveBet, isResolving, resolvingBetId } = useResolveBet();
 
   const handleResolve = (betId: number | string) => {
@@ -94,6 +94,8 @@ export function BetsTable() {
                 key={bet.id}
                 bet={bet}
                 currentAddress={address}
+                isConnected={isConnected}
+                isWalletLoading={isWalletLoading}
                 onResolve={handleResolve}
                 isResolving={isResolving && resolvingBetId === bet.id}
               />
@@ -108,6 +110,8 @@ export function BetsTable() {
 interface BetRowProps {
   bet: Bet;
   currentAddress: string | null;
+  isConnected: boolean;
+  isWalletLoading: boolean;
   onResolve: (betId: number | string) => void;
   isResolving: boolean;
 }
@@ -126,9 +130,9 @@ function getPredictionColor(winnerCode: string): string {
   return "text-xs";
 }
 
-function BetRow({ bet, currentAddress, onResolve, isResolving }: BetRowProps) {
+function BetRow({ bet, currentAddress, isConnected, isWalletLoading, onResolve, isResolving }: BetRowProps) {
   const isOwner = currentAddress?.toLowerCase() === bet.owner?.toLowerCase();
-  const canResolve = isOwner && !bet.has_resolved;
+  const canResolve = isConnected && currentAddress && isOwner && !bet.has_resolved && !isWalletLoading;
 
   return (
     <tr className="group hover:bg-white/5 transition-colors animate-fade-in">

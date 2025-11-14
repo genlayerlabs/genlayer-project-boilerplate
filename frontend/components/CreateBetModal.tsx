@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Loader2, Calendar, Users } from "lucide-react";
 import { useCreateBet } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
@@ -10,7 +10,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export function CreateBetModal() {
-  const { isConnected } = useWallet();
+  const { isConnected, address, isLoading } = useWallet();
   const { createBet, isCreating, isSuccess } = useCreateBet();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +25,14 @@ export function CreateBetModal() {
     team2: "",
     predictedWinner: "",
   });
+
+  // Auto-close modal when wallet disconnects
+  // Don't close if transaction is in progress to avoid interrupting user
+  useEffect(() => {
+    if (!isConnected && isOpen && !isCreating) {
+      setIsOpen(false);
+    }
+  }, [isConnected, isOpen, isCreating]);
 
   const validateForm = (): boolean => {
     const newErrors = {
@@ -57,7 +65,7 @@ export function CreateBetModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isConnected) {
+    if (!isConnected || !address) {
       alert("Please connect your wallet first");
       return;
     }
@@ -102,7 +110,7 @@ export function CreateBetModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="gradient" disabled={!isConnected}>
+        <Button variant="gradient" disabled={!isConnected || !address || isLoading}>
           <Plus className="w-4 h-4 mr-2" />
           Create Bet
         </Button>

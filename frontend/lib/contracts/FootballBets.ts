@@ -1,6 +1,5 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
-import type { Account } from "../genlayer/client";
 import type { Bet, LeaderboardEntry, TransactionReceipt } from "./types";
 
 /**
@@ -10,15 +9,19 @@ class FootballBets {
   private contractAddress: `0x${string}`;
   private client: ReturnType<typeof createClient>;
 
-  constructor(contractAddress: string, account?: Account | null, studioUrl?: string) {
+  constructor(
+    contractAddress: string,
+    address?: string | null,
+    studioUrl?: string
+  ) {
     this.contractAddress = contractAddress as `0x${string}`;
 
     const config: any = {
       chain: studionet,
     };
 
-    if (account) {
-      config.account = account;
+    if (address) {
+      config.account = address as `0x${string}`;
     }
 
     if (studioUrl) {
@@ -29,13 +32,15 @@ class FootballBets {
   }
 
   /**
-   * Update the account used for transactions
+   * Update the address used for transactions
    */
-  updateAccount(account: Account): void {
-    this.client = createClient({
+  updateAccount(address: string): void {
+    const config: any = {
       chain: studionet,
-      account,
-    });
+      account: address as `0x${string}`,
+    };
+
+    this.client = createClient(config);
   }
 
   /**
@@ -52,9 +57,9 @@ class FootballBets {
 
       // Convert GenLayer Map structure to typed array
       if (bets instanceof Map) {
-        return Array.from(bets.entries()).flatMap(
-          ([owner, betMap]) => {
-            return Array.from((betMap as any).entries()).map(([id, betData]: any) => {
+        return Array.from(bets.entries()).flatMap(([owner, betMap]) => {
+          return Array.from((betMap as any).entries()).map(
+            ([id, betData]: any) => {
               const betObj = Array.from((betData as any).entries()).reduce(
                 (obj: any, [key, value]: any) => {
                   obj[key] = value;
@@ -68,9 +73,9 @@ class FootballBets {
                 ...betObj,
                 owner,
               } as Bet;
-            });
-          }
-        );
+            }
+          );
+        });
       }
 
       return [];

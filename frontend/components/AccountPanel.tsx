@@ -1,150 +1,170 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, Key, Download, Upload } from "lucide-react";
-import { useWallet, copyToClipboard, downloadAsFile } from "@/lib/genlayer/wallet";
+import { User, LogOut, AlertCircle, ExternalLink } from "lucide-react";
+import { useWallet } from "@/lib/genlayer/wallet";
 import { usePlayerPoints } from "@/lib/hooks/useFootballBets";
 import { AddressDisplay } from "./AddressDisplay";
 import { Button } from "./ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { Input } from "./ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+
+const METAMASK_INSTALL_URL = "https://metamask.io/download/";
 
 export function AccountPanel() {
-  const { address, isConnected, createAccount, importAccount, disconnectAccount } = useWallet();
+  const {
+    address,
+    isConnected,
+    isMetaMaskInstalled,
+    isOnCorrectNetwork,
+    isLoading,
+    connectWallet,
+    disconnectWallet,
+    switchWalletAccount,
+  } = useWallet();
+
   const { data: points = 0 } = usePlayerPoints(address);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [importKey, setImportKey] = useState("");
-  const [importError, setImportError] = useState("");
-  const [showPrivateKey, setShowPrivateKey] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
 
-  const handleCreateAccount = () => {
-    try {
-      createAccount();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Failed to create account:", error);
-    }
-  };
-
-  const handleImportAccount = () => {
-    if (!importKey.trim()) {
-      setImportError("Please enter a private key");
+  const handleConnect = async () => {
+    if (!isMetaMaskInstalled) {
       return;
     }
 
     try {
-      importAccount(importKey.trim());
-      setImportKey("");
-      setImportError("");
+      setIsConnecting(true);
+      setConnectionError("");
+      await connectWallet();
       setIsModalOpen(false);
-    } catch (error) {
-      setImportError("Invalid private key. Please check and try again.");
+    } catch (error: any) {
+      console.error("Failed to connect wallet:", error);
+      setConnectionError(error.message || "Failed to connect to MetaMask");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
   const handleDisconnect = () => {
-    disconnectAccount();
-    setShowPrivateKey(false);
+    disconnectWallet();
     setIsModalOpen(false);
   };
 
-  const handleCopyPrivateKey = async () => {
-    if (!address) return;
-    const privateKey = localStorage.getItem("genlayer_account_private_key");
-    if (privateKey) {
-      const success = await copyToClipboard(privateKey);
-      if (success) {
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+  const handleSwitchAccount = async () => {
+    try {
+      setIsSwitching(true);
+      setConnectionError("");
+      await switchWalletAccount();
+      // Keep modal open to show new account info
+    } catch (error: any) {
+      console.error("Failed to switch account:", error);
+
+      // Don't show error if user cancelled
+      if (!error.message?.includes("rejected")) {
+        setConnectionError(error.message || "Failed to switch account");
       }
+    } finally {
+      setIsSwitching(false);
     }
   };
 
-  const handleExportPrivateKey = () => {
-    if (!address) return;
-    const privateKey = localStorage.getItem("genlayer_account_private_key");
-    if (privateKey) {
-      downloadAsFile(privateKey, `genlayer-${address.slice(0, 8)}.key`);
-    }
-  };
-
+  // Not connected state
   if (!isConnected) {
     return (
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button variant="gradient">
+          <Button variant="gradient" disabled={isLoading}>
             <User className="w-4 h-4 mr-2" />
             Connect Wallet
           </Button>
         </DialogTrigger>
         <DialogContent className="brand-card border-2">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Connect to GenLayer</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              Connect to GenLayer
+            </DialogTitle>
             <DialogDescription>
-              Create a new account or import an existing one using your private key
+              Connect your MetaMask wallet to start betting
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
-            <Button
-              onClick={handleCreateAccount}
-              variant="gradient"
-              className="w-full h-14 text-lg"
-            >
-              <User className="w-5 h-5 mr-2" />
-              Create New Account
-            </Button>
+            {!isMetaMaskInstalled ? (
+              <>
+                <Alert variant="default" className="bg-accent/10 border-accent/20">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>MetaMask Not Detected</AlertTitle>
+                  <AlertDescription>
+                    Please install MetaMask to continue. MetaMask is a crypto
+                    wallet that allows you to interact with blockchain applications.
+                  </AlertDescription>
+                </Alert>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-white/10" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[oklch(0.15_0.01_0)] px-2 text-muted-foreground">
-                  Or import existing
-                </span>
-              </div>
-            </div>
+                <Button
+                  onClick={() => window.open(METAMASK_INSTALL_URL, "_blank")}
+                  variant="gradient"
+                  className="w-full h-14 text-lg"
+                >
+                  <ExternalLink className="w-5 h-5 mr-2" />
+                  Install MetaMask
+                </Button>
 
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="Enter your private key"
-                value={importKey}
-                onChange={(e) => {
-                  setImportKey(e.target.value);
-                  setImportError("");
-                }}
-                className="font-mono text-sm"
-              />
-              {importError && (
-                <p className="text-destructive text-sm">{importError}</p>
-              )}
-              <Button
-                onClick={handleImportAccount}
-                variant="secondary"
-                className="w-full"
-                disabled={!importKey.trim()}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Import Account
-              </Button>
-            </div>
+                <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
+                  <p className="text-xs text-muted-foreground">
+                    After installing MetaMask, refresh this page and click
+                    &quot;Connect Wallet&quot; again.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={handleConnect}
+                  variant="gradient"
+                  className="w-full h-14 text-lg"
+                  disabled={isConnecting}
+                >
+                  <User className="w-5 h-5 mr-2" />
+                  {isConnecting ? "Connecting..." : "Connect MetaMask"}
+                </Button>
 
-            <div className="mt-4 p-4 rounded-lg bg-accent/10 border border-accent/20">
-              <p className="text-xs text-muted-foreground">
-                <strong className="text-accent">Security Note:</strong> Your private key is stored locally in your browser.
-                Make sure to export and backup your key before clearing browser data.
-              </p>
-            </div>
+                {connectionError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Connection Error</AlertTitle>
+                    <AlertDescription>{connectionError}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
+                  <p className="text-xs text-muted-foreground">
+                    This will open MetaMask and prompt you to:
+                  </p>
+                  <ol className="text-xs text-muted-foreground list-decimal list-inside mt-2 space-y-1">
+                    <li>Connect your wallet to this application</li>
+                    <li>Add the GenLayer network to MetaMask</li>
+                    <li>Switch to the GenLayer network</li>
+                  </ol>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
     );
   }
 
+  // Connected state
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <div className="flex items-center gap-4">
@@ -162,25 +182,25 @@ export function AccountPanel() {
 
         <DialogTrigger asChild>
           <Button variant="outline" size="sm">
-            <Key className="w-4 h-4" />
+            <User className="w-4 h-4" />
           </Button>
         </DialogTrigger>
       </div>
 
       <DialogContent className="brand-card border-2">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Account Settings</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">
+            Wallet Details
+          </DialogTitle>
           <DialogDescription>
-            Manage your GenLayer account and private key
+            Your connected MetaMask wallet information
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
           <div className="brand-card p-4 space-y-2">
             <p className="text-sm text-muted-foreground">Your Address</p>
-            <div className="flex items-center justify-between">
-              <code className="text-sm font-mono">{address}</code>
-            </div>
+            <code className="text-sm font-mono break-all">{address}</code>
           </div>
 
           <div className="brand-card p-4 space-y-2">
@@ -188,41 +208,70 @@ export function AccountPanel() {
             <p className="text-2xl font-bold text-accent">{points}</p>
           </div>
 
-          <div className="space-y-2">
-            <Button
-              onClick={handleCopyPrivateKey}
-              className="w-full"
-              variant="outline"
-            >
-              <Key className="w-4 h-4 mr-2" />
-              {copySuccess ? "Copied!" : "Copy Private Key"}
-            </Button>
-
-            <Button
-              onClick={handleExportPrivateKey}
-              className="w-full"
-              variant="outline"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export Private Key
-            </Button>
+          <div className="brand-card p-4 space-y-2">
+            <p className="text-sm text-muted-foreground">Network Status</p>
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isOnCorrectNetwork
+                    ? "bg-green-500"
+                    : "bg-yellow-500 animate-pulse"
+                }`}
+              />
+              <span className="text-sm">
+                {isOnCorrectNetwork
+                  ? "Connected to GenLayer"
+                  : "Wrong Network"}
+              </span>
+            </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/10">
+          {!isOnCorrectNetwork && (
+            <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/20">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertTitle>Network Warning</AlertTitle>
+              <AlertDescription>
+                You&apos;re not on the GenLayer network. Please switch networks in
+                MetaMask or try reconnecting.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {connectionError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{connectionError}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+            <Button
+              onClick={handleSwitchAccount}
+              variant="outline"
+              className="w-full"
+              disabled={isSwitching || isLoading}
+            >
+              <User className="w-4 h-4 mr-2" />
+              {isSwitching ? "Switching..." : "Switch Account"}
+            </Button>
+
             <Button
               onClick={handleDisconnect}
               className="w-full text-destructive hover:text-destructive"
               variant="outline"
+              disabled={isSwitching || isLoading}
             >
               <LogOut className="w-4 h-4 mr-2" />
-              Disconnect Account
+              Disconnect Wallet
             </Button>
           </div>
 
-          <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+          <div className="p-4 rounded-lg bg-muted/10 border border-muted/20">
             <p className="text-xs text-muted-foreground">
-              <strong className="text-destructive">Warning:</strong> Never share your private key with anyone.
-              Anyone with access to your private key can control your account.
+              Use &quot;Switch Account&quot; to select a different MetaMask
+              account. Use &quot;Disconnect&quot; to remove this site from
+              MetaMask.
             </p>
           </div>
         </div>
