@@ -49,7 +49,7 @@ This project includes the boilerplate code for a GenLayer use case implementatio
    npm run dev
    ```
 
-   The terminal should display a link to access your frontend app (usually at http://localhost:3000/).
+   The terminal should display a link to access your frontend app (usually at <http://localhost:3000/>).
    For more information on the code see [GenLayerJS](https://github.com/yeagerai/genlayer-js).
    
 ### 5. Test contracts
