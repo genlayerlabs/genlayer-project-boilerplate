@@ -161,8 +161,9 @@ class FootballBets {
 
       const receipt = await this.client.waitForTransactionReceipt({
         hash: txHash,
-        status: "FINALIZED" as any,
-        interval: 10000,
+        status: "ACCEPTED" as any,
+        retries: 24,
+        interval: 5000,
       });
 
       return receipt as TransactionReceipt;
@@ -177,7 +178,7 @@ class FootballBets {
    * @param betId - ID of the bet to resolve
    * @returns Transaction receipt
    */
-  async resolveBet(betId: string | number): Promise<TransactionReceipt> {
+  async resolveBet(betId: string): Promise<TransactionReceipt> {
     try {
       const txHash = await this.client.writeContract({
         address: this.contractAddress,
@@ -188,9 +189,9 @@ class FootballBets {
 
       const receipt = await this.client.waitForTransactionReceipt({
         hash: txHash,
-        status: "FINALIZED" as any,
-        interval: 10000,
-        retries: 20,
+        status: "ACCEPTED" as any,
+        retries: 24,
+        interval: 5000,
       });
 
       return receipt as TransactionReceipt;

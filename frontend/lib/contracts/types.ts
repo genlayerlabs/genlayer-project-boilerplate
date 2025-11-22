@@ -3,7 +3,7 @@
  */
 
 export interface Bet {
-  id: number | string;
+  id: string;
   game_date: string;
   team1: string;
   team2: string;

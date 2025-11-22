@@ -1,11 +1,12 @@
 "use client";
 
-import { Trophy, Medal, Award, Loader2 } from "lucide-react";
-import { useLeaderboard } from "@/lib/hooks/useFootballBets";
+import { Trophy, Medal, Award, Loader2, AlertCircle } from "lucide-react";
+import { useLeaderboard, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { AddressDisplay } from "./AddressDisplay";
 
 export function Leaderboard() {
+  const contract = useFootballBetsContract();
   const { data: leaderboard, isLoading, isError } = useLeaderboard();
   const { address } = useWallet();
 
@@ -18,6 +19,24 @@ export function Leaderboard() {
         </h2>
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-accent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!contract) {
+    return (
+      <div className="brand-card p-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-accent" />
+          Leaderboard
+        </h2>
+        <div className="text-center py-8 space-y-3">
+          <AlertCircle className="w-12 h-12 mx-auto text-yellow-400 opacity-60" />
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Setup Required</p>
+            <p className="text-xs text-muted-foreground">Contract address not configured</p>
+          </div>
         </div>
       </div>
     );

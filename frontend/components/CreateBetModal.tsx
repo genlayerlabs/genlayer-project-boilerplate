@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Plus, Loader2, Calendar, Users } from "lucide-react";
 import { useCreateBet } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
+import { success, error } from "@/lib/utils/toast";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -66,7 +67,7 @@ export function CreateBetModal() {
     e.preventDefault();
 
     if (!isConnected || !address) {
-      alert("Please connect your wallet first");
+      error("Please connect your wallet first");
       return;
     }
 
@@ -74,38 +75,36 @@ export function CreateBetModal() {
       return;
     }
 
-    try {
-      await createBet({
-        gameDate,
-        team1,
-        team2,
-        predictedWinner: predictedWinner, // Send "1", "2", or "0" directly
-      });
+    createBet({
+      gameDate,
+      team1,
+      team2,
+      predictedWinner: predictedWinner, // Send "1", "2", or "0" directly
+    });
+  };
 
-      // Reset form on success
-      setGameDate("");
-      setTeam1("");
-      setTeam2("");
-      setPredictedWinner("");
-      setErrors({ gameDate: "", team1: "", team2: "", predictedWinner: "" });
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to create bet:", error);
-      alert("Failed to create bet. Please try again.");
-    }
+  const resetForm = () => {
+    setGameDate("");
+    setTeam1("");
+    setTeam2("");
+    setPredictedWinner("");
+    setErrors({ gameDate: "", team1: "", team2: "", predictedWinner: "" });
   };
 
   const handleOpenChange = (open: boolean) => {
     if (!open && !isCreating) {
-      // Reset form when closing
-      setGameDate("");
-      setTeam1("");
-      setTeam2("");
-      setPredictedWinner("");
-      setErrors({ gameDate: "", team1: "", team2: "", predictedWinner: "" });
+      resetForm();
     }
     setIsOpen(open);
   };
+
+  // Reset form and close modal on successful bet creation
+  useEffect(() => {
+    if (isSuccess) {
+      resetForm();
+      setIsOpen(false);
+    }
+  }, [isSuccess]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>

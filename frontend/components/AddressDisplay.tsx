@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { formatAddress } from "@/lib/genlayer/wallet";
+import { success, error } from "@/lib/utils/toast";
 
 interface AddressDisplayProps {
   address: string | null;
@@ -33,8 +34,12 @@ export function AddressDisplay({
       await navigator.clipboard.writeText(address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy address:", error);
+      success("Address copied!");
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+      error("Failed to copy address", {
+        description: "Please copy manually or try again."
+      });
     }
   };
 

@@ -11,6 +11,7 @@ import {
   getEthereumProvider,
   GENLAYER_CHAIN_ID,
 } from "./client";
+import { error, userRejected, warning } from "../utils/toast";
 
 // localStorage key for tracking user's disconnect intent
 const DISCONNECT_FLAG = "wallet_disconnected";
@@ -206,10 +207,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       return address;
-    } catch (error) {
-      console.error("Error connecting wallet:", error);
+    } catch (err: any) {
+      console.error("Error connecting wallet:", err);
       setState((prev) => ({ ...prev, isLoading: false }));
-      throw error;
+
+      // Handle specific error types with appropriate toasts
+      if (err.message?.includes("rejected")) {
+        userRejected("Connection cancelled");
+      } else if (err.message?.includes("MetaMask is not installed")) {
+        error("MetaMask not found", {
+          description: "Please install MetaMask to connect your wallet.",
+          action: {
+            label: "Install MetaMask",
+            onClick: () => window.open("https://metamask.io/download/", "_blank")
+          }
+        });
+      } else {
+        error("Failed to connect wallet", {
+          description: err.message || "Please check your MetaMask and try again."
+        });
+      }
+
+      throw err;
     }
   }, []);
 
@@ -263,10 +282,20 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       });
 
       return newAddress;
-    } catch (error: any) {
-      console.error("Error switching account:", error);
+    } catch (err: any) {
+      console.error("Error switching account:", err);
       setState((prev) => ({ ...prev, isLoading: false }));
-      throw error;
+
+      // Handle specific error types
+      if (err.message?.includes("rejected")) {
+        userRejected("Account switch cancelled");
+      } else {
+        error("Failed to switch account", {
+          description: err.message || "Please try again."
+        });
+      }
+
+      throw err;
     }
   }, []);
 

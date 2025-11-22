@@ -1,21 +1,23 @@
 "use client";
 
-import { Loader2, Trophy, Clock } from "lucide-react";
-import { useBets, useResolveBet } from "@/lib/hooks/useFootballBets";
+import { Loader2, Trophy, Clock, AlertCircle } from "lucide-react";
+import { useBets, useResolveBet, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
+import { error } from "@/lib/utils/toast";
 import { AddressDisplay } from "./AddressDisplay";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import type { Bet } from "@/lib/contracts/types";
 
 export function BetsTable() {
+  const contract = useFootballBetsContract();
   const { data: bets, isLoading, isError } = useBets();
   const { address, isConnected, isLoading: isWalletLoading } = useWallet();
   const { resolveBet, isResolving, resolvingBetId } = useResolveBet();
 
-  const handleResolve = (betId: number | string) => {
+  const handleResolve = (betId: string) => {
     if (!address) {
-      alert("Please connect your wallet to resolve bets");
+      error("Please connect your wallet to resolve bets");
       return;
     }
 
@@ -23,7 +25,7 @@ export function BetsTable() {
     const confirmed = confirm("Are you sure you want to resolve this bet? This action will determine the winner.");
 
     if (confirmed) {
-      resolveBet(typeof betId === 'string' ? parseInt(betId) : betId);
+      resolveBet(betId);
     }
   };
 
@@ -33,6 +35,25 @@ export function BetsTable() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-accent" />
           <p className="text-sm text-muted-foreground">Loading bets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!contract) {
+    return (
+      <div className="brand-card p-12">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-16 h-16 mx-auto text-yellow-400 opacity-60" />
+          <h3 className="text-xl font-bold">Setup Required</h3>
+          <div className="space-y-2">
+            <p className="text-muted-foreground">
+              Contract address not configured.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Please set <code className="bg-muted px-1 py-0.5 rounded text-xs">NEXT_PUBLIC_CONTRACT_ADDRESS</code> in your .env file.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -112,7 +133,7 @@ interface BetRowProps {
   currentAddress: string | null;
   isConnected: boolean;
   isWalletLoading: boolean;
-  onResolve: (betId: number | string) => void;
+  onResolve: (betId: string) => void;
   isResolving: boolean;
 }
 
@@ -127,7 +148,7 @@ function formatWinner(winnerCode: string, team1?: string, team2?: string): strin
 // Helper function to get badge color for prediction
 function getPredictionColor(winnerCode: string): string {
   if (winnerCode === "0") return "text-yellow-400 border-yellow-500/30";
-  return "text-xs";
+  return "text-accent border-accent/30";
 }
 
 function BetRow({ bet, currentAddress, isConnected, isWalletLoading, onResolve, isResolving }: BetRowProps) {

@@ -29,7 +29,7 @@ This project includes the boilerplate code for a GenLayer use case implementatio
 
 ### 2. Setup the frontend environment
   1. All the content of the dApp is located in the `/frontend` folder.
-  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_STUDIO_URL value is the backend of the hosted GenLayer Studio.
+  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_GENLAYER_RPC_URL value is the backend of the hosted GenLayer Studio.
   3. Add the deployed contract address to the `/frontend/.env` under the variable `NEXT_PUBLIC_CONTRACT_ADDRESS`
 
 ### 4. Run the frontend Next.js app

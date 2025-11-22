@@ -4,6 +4,7 @@ import { useState } from "react";
 import { User, LogOut, AlertCircle, ExternalLink } from "lucide-react";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { usePlayerPoints } from "@/lib/hooks/useFootballBets";
+import { success, error, userRejected } from "@/lib/utils/toast";
 import { AddressDisplay } from "./AddressDisplay";
 import { Button } from "./ui/button";
 import {
@@ -47,9 +48,17 @@ export function AccountPanel() {
       setConnectionError("");
       await connectWallet();
       setIsModalOpen(false);
-    } catch (error: any) {
-      console.error("Failed to connect wallet:", error);
-      setConnectionError(error.message || "Failed to connect to MetaMask");
+    } catch (err: any) {
+      console.error("Failed to connect wallet:", err);
+      setConnectionError(err.message || "Failed to connect to MetaMask");
+
+      if (err.message?.includes("rejected")) {
+        userRejected("Connection cancelled");
+      } else {
+        error("Failed to connect wallet", {
+          description: err.message || "Check your MetaMask and try again."
+        });
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -66,12 +75,17 @@ export function AccountPanel() {
       setConnectionError("");
       await switchWalletAccount();
       // Keep modal open to show new account info
-    } catch (error: any) {
-      console.error("Failed to switch account:", error);
+    } catch (err: any) {
+      console.error("Failed to switch account:", err);
 
       // Don't show error if user cancelled
-      if (!error.message?.includes("rejected")) {
-        setConnectionError(error.message || "Failed to switch account");
+      if (!err.message?.includes("rejected")) {
+        setConnectionError(err.message || "Failed to switch account");
+        error("Failed to switch account", {
+          description: err.message || "Please try again."
+        });
+      } else {
+        userRejected("Account switch cancelled");
       }
     } finally {
       setIsSwitching(false);

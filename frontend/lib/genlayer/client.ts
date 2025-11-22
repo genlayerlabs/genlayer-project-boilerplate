@@ -4,19 +4,19 @@ import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { createWalletClient, custom, type WalletClient } from "viem";
 
-// GenLayer Network Configuration
-export const GENLAYER_CHAIN_ID = 61999; // 0xF1FF in hex
-export const GENLAYER_CHAIN_ID_HEX = "0xF1FF";
+// GenLayer Network Configuration (from environment variables with fallbacks)
+export const GENLAYER_CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_GENLAYER_CHAIN_ID || "61999");
+export const GENLAYER_CHAIN_ID_HEX = `0x${GENLAYER_CHAIN_ID.toString(16).toUpperCase()}`;
 
 export const GENLAYER_NETWORK = {
-  chainId: "0xF22F", // 61999 in hex
-  chainName: "GenLayer Studio",
+  chainId: GENLAYER_CHAIN_ID_HEX,
+  chainName: process.env.NEXT_PUBLIC_GENLAYER_CHAIN_NAME || "GenLayer Studio",
   nativeCurrency: {
-    name: "GEN",
-    symbol: "GEN",
+    name: process.env.NEXT_PUBLIC_GENLAYER_SYMBOL || "GEN",
+    symbol: process.env.NEXT_PUBLIC_GENLAYER_SYMBOL || "GEN",
     decimals: 18,
   },
-  rpcUrls: ["https://studio.genlayer.com/api"],
+  rpcUrls: [process.env.NEXT_PUBLIC_GENLAYER_RPC_URL || "https://studio.genlayer.com/api"],
   blockExplorerUrls: [],
 };
 
@@ -35,11 +35,11 @@ declare global {
 }
 
 /**
- * Get the GenLayer studio URL from environment variables
+ * Get the GenLayer RPC URL from environment variables
  */
 export function getStudioUrl(): string {
   return (
-    process.env.NEXT_PUBLIC_STUDIO_URL || "https://studio.genlayer.com/api"
+    process.env.NEXT_PUBLIC_GENLAYER_RPC_URL || "https://studio.genlayer.com/api"
   );
 }
 
