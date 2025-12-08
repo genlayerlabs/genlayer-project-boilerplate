@@ -15,5 +15,11 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-deploy/deployScript.compiled.js
 /context
+/frontend/.next
+/frontend/next-env.d.ts
+/frontend/bun.lock
+/frontend/package-lock.json
+*.compiled.js
+package-lock.json
+

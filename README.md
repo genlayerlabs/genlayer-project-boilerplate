@@ -14,6 +14,7 @@ This project includes the boilerplate code for a GenLayer use case implementatio
 <!-- - Test functions to write complete end-to-end tests -->
 - An example of an intelligent contract (Football Bets)
 - Example end-to-end tests for the contract provided
+- A production-ready Next.js 15 frontend with TypeScript, TanStack Query, and Radix UI
 
 ## 🛠️ Requirements
 - A running GenLayer Studio (Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or work with the hosted version of [GenLayer Studio](https://studio.genlayer.com/)). If you are working locally, this repository code does not need to be located in the same directory as the Genlayer Studio.
@@ -27,18 +28,28 @@ This project includes the boilerplate code for a GenLayer use case implementatio
    2. Execute the deploy command `genlayer deploy`. This command is going to execute the deploy script located in `/deploy/deployScript.ts`
 
 ### 2. Setup the frontend environment
-  1. All the content of the dApp is located in the `/app` folder.
-  2. Copy the `.env.example` file in the `app` folder and rename it to `.env`, then fill in the values for your configuration. The provided VITE_STUDIO_URL value is the backend of the hosted GenLayer Studio.
-  3. Add the deployed contract address to the `/app/.env` under the variable `VITE_CONTRACT_ADDRESS`
+  1. All the content of the dApp is located in the `/frontend` folder.
+  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_GENLAYER_RPC_URL value is the backend of the hosted GenLayer Studio.
+  3. Add the deployed contract address to the `/frontend/.env` under the variable `NEXT_PUBLIC_CONTRACT_ADDRESS`
 
-### 4. Run the frontend Vue app
+### 4. Run the frontend Next.js app
    Execute the following commands in your terminal:
+
+   **Using bun:**
    ```shell
-   cd app
+   cd frontend
+   bun install
+   bun dev
+   ```
+
+   **Using npm:**
+   ```shell
+   cd frontend
    npm install
    npm run dev
    ```
-   The terminal should display a link to access your frontend app (usually at http://localhost:5173/).
+
+   The terminal should display a link to access your frontend app (usually at <http://localhost:3000/>).
    For more information on the code see [GenLayerJS](https://github.com/yeagerai/genlayer-js).
    
 ### 5. Test contracts

@@ -1,0 +1,490 @@
+@import "tailwindcss";
+
+/* GenLayer Brand Guidelines 2025 - Typography via next/font */
+/* --font-body: Inter (Switzer alternative) */
+/* --font-display: Space Grotesk (Lineca alternative) */
+
+@custom-variant dark (&:is(.dark *));
+
+/* GenLayer Brand Colors 2025 */
+:root {
+  /* Base colors - keep black background for dark theme */
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.98 0 0);
+
+  /* Cards with navy tint per brand guidelines */
+  --card: oklch(0.25 0.08 265);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.25 0.08 265);
+  --popover-foreground: oklch(0.98 0 0);
+
+  /* Primary: Purple-Pink Gradient (#9B6AF6 → #E37DF7) */
+  --primary: oklch(0.65 0.22 300);
+  --primary-foreground: oklch(0.98 0 0);
+
+  /* Secondary: Navy Blue (#282B5D) */
+  --secondary: oklch(0.25 0.08 265);
+  --secondary-foreground: oklch(0.98 0 0);
+
+  /* Muted states */
+  --muted: oklch(0.18 0.04 265);
+  --muted-foreground: oklch(0.55 0 0);
+
+  /* Accent: Purple (brand primary) */
+  --accent: oklch(0.65 0.22 300);
+  --accent-foreground: oklch(0.98 0 0);
+
+  /* Brand Blue: #110FFF */
+  --blue: oklch(0.55 0.37 265);
+  --blue-foreground: oklch(0.98 0 0);
+
+  /* Brand Pink (gradient end): #E37DF7 */
+  --pink: oklch(0.78 0.18 330);
+
+  /* Destructive remains red */
+  --destructive: oklch(0.65 0.25 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  /* Borders and inputs with navy tint */
+  --border: oklch(0.25 0.08 265);
+  --input: oklch(0.20 0.06 265);
+  --ring: oklch(0.65 0.22 300);
+
+  /* Chart colors using brand palette */
+  --chart-1: oklch(0.65 0.22 300); /* Purple */
+  --chart-2: oklch(0.78 0.18 330); /* Pink */
+  --chart-3: oklch(0.55 0.37 265); /* Blue */
+  --chart-4: oklch(0.25 0.08 265); /* Navy */
+  --chart-5: oklch(0.60 0.20 315); /* Purple-Pink mid */
+
+  --radius: 0.5rem;
+
+  /* Sidebar colors */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.65 0.22 300);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* Dark theme (same as root for this project - already dark) */
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.25 0.08 265);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.25 0.08 265);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.65 0.22 300);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.25 0.08 265);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.18 0.04 265);
+  --muted-foreground: oklch(0.55 0 0);
+  --accent: oklch(0.65 0.22 300);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.65 0.25 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.25 0.08 265);
+  --input: oklch(0.20 0.06 265);
+  --ring: oklch(0.65 0.22 300);
+  --chart-1: oklch(0.65 0.22 300);
+  --chart-2: oklch(0.78 0.18 330);
+  --chart-3: oklch(0.55 0.37 265);
+  --chart-4: oklch(0.25 0.08 265);
+  --chart-5: oklch(0.60 0.20 315);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.65 0.22 300);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.25 0.08 265);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.25 0.08 265);
+  --sidebar-ring: oklch(0.65 0.22 300);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply text-foreground;
+    /* Use Inter (via --font-body from layout.tsx) */
+    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    /* Use Space Grotesk for headings (via --font-display from layout.tsx) */
+    font-family: var(--font-display), var(--font-body), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* GenLayer Brand Utilities 2025 - Clean, Modern Design */
+@layer utilities {
+  /* Animations */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Brand Gradient Utilities */
+  .gradient-purple-pink {
+    background: linear-gradient(135deg, oklch(0.65 0.22 300) 0%, oklch(0.78 0.18 330) 100%);
+  }
+
+  .gradient-purple-blue {
+    background: linear-gradient(135deg, oklch(0.65 0.22 300) 0%, oklch(0.55 0.37 265) 100%);
+  }
+
+  /* Clean Card Styles (replacing glass-morphism) */
+  .brand-card {
+    background: oklch(0.25 0.08 265 / 0.6);
+    border: 1px solid oklch(0.30 0.10 265 / 0.4);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .brand-card-hover:hover {
+    border-color: oklch(0.65 0.22 300 / 0.6);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1),
+                0 0 0 1px oklch(0.65 0.22 300 / 0.2);
+    transform: translateY(-2px);
+  }
+
+  /* Clean Navbar */
+  .brand-navbar {
+    background: oklch(0 0 0 / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid oklch(0.25 0.08 265 / 0.4);
+  }
+
+  /* Brand Button Styles - Primary (Purple Gradient) */
+  .btn-primary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, oklch(0.65 0.22 300) 0%, oklch(0.78 0.18 330) 100%);
+    color: oklch(0.98 0 0);
+    font-weight: 500;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px 0 oklch(0.65 0.22 300 / 0.2);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px 0 oklch(0.65 0.22 300 / 0.3);
+    filter: brightness(1.1);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  /* Brand Button - Secondary (Navy) */
+  .btn-secondary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: oklch(0.25 0.08 265);
+    color: oklch(0.98 0 0);
+    font-weight: 500;
+    border: 1px solid oklch(0.30 0.10 265);
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: oklch(0.28 0.10 265);
+    border-color: oklch(0.65 0.22 300 / 0.5);
+    transform: translateY(-1px);
+  }
+
+  /* Brand Button - Blue */
+  .btn-blue {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: oklch(0.55 0.37 265);
+    color: oklch(0.98 0 0);
+    font-weight: 500;
+    border: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px 0 oklch(0.55 0.37 265 / 0.2);
+  }
+
+  .btn-blue:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px 0 oklch(0.55 0.37 265 / 0.3);
+    filter: brightness(1.1);
+  }
+
+  /* Betting Panel Button States (Simplified) */
+  .bet-button-unselected {
+    background: oklch(0.25 0.08 265 / 0.5);
+    border: 1px solid oklch(0.30 0.10 265 / 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bet-button-unselected-a:hover {
+    background: oklch(0.28 0.12 300 / 0.6);
+    border-color: oklch(0.65 0.22 300 / 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px 0 oklch(0.65 0.22 300 / 0.2);
+  }
+
+  .bet-button-unselected-b:hover {
+    background: oklch(0.28 0.15 265 / 0.6);
+    border-color: oklch(0.55 0.37 265 / 0.6);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px 0 oklch(0.55 0.37 265 / 0.2);
+  }
+
+  .bet-button-selected-a {
+    background: oklch(0.25 0.08 265 / 0.6);
+    color: oklch(0.98 0 0);
+    border: 1px solid oklch(0.65 0.22 300);
+    box-shadow: 0 0 0 2px oklch(0.65 0.22 300 / 0.2), 0 4px 12px 0 oklch(0.65 0.22 300 / 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bet-button-selected-b {
+    background: oklch(0.25 0.08 265 / 0.6);
+    color: oklch(0.98 0 0);
+    border: 1px solid oklch(0.55 0.37 265);
+    box-shadow: 0 0 0 2px oklch(0.55 0.37 265 / 0.2), 0 4px 12px 0 oklch(0.55 0.37 265 / 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* GenLayer Brand Background - Clean with Subtle Purple Gradient */
+@keyframes brandGradientShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+html {
+  min-height: 100vh !important;
+  height: 100%;
+  scroll-behavior: smooth;
+  background-color: #000000 !important;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -20%, oklch(0.65 0.22 300 / 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 80%, oklch(0.55 0.37 265 / 0.05) 0%, transparent 50%),
+    linear-gradient(180deg, #000000 0%, #0a0a0f 50%, #000000 100%);
+  background-attachment: fixed !important;
+  background-size: 200% 200% !important;
+  background-repeat: no-repeat !important;
+  animation: brandGradientShift 20s ease infinite;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh !important;
+  overscroll-behavior: none;
+}
+
+/* Smooth visual integration for content areas */
+main {
+  position: relative;
+}
+
+/* Subtle top fade to blend with navbar */
+main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2rem;
+  background: linear-gradient(to bottom,
+    oklch(0.1 0.01 0 / 0.6) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure content is above the fade effect */
+main > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Reown AppKit Modal Customization */
+/* Hide "UX by Reown" branding */
+w3m-legal-footer,
+[data-testid="w3m-legal-footer"],
+wcm-legal-footer {
+  display: none !important;
+}
+
+/* Match project border radius consistently - 8px for cleaner look */
+w3m-modal,
+wcm-modal,
+w3m-router,
+wcm-router,
+w3m-modal-content,
+wcm-modal-content {
+  --w3m-border-radius-master: 8px !important;
+}
+
+/* Enhance modal glass-morphism to match app theme */
+w3m-modal,
+wcm-modal {
+  --w3m-background: oklch(0.24 0.01 0 / 0.95) !important;
+  --w3m-color-overlay: oklch(0 0 0 / 0.8) !important;
+}
+
+/* Override all border radius in AppKit components */
+w3m-modal *,
+wcm-modal *,
+w3m-button,
+wcm-button,
+w3m-wallet-button,
+wcm-wallet-button,
+w3m-card,
+wcm-card,
+w3m-input,
+wcm-input {
+  border-radius: 8px !important;
+}
+
+/* Smaller radius for internal elements */
+w3m-wallet-image,
+wcm-wallet-image,
+w3m-network-image,
+wcm-network-image {
+  border-radius: 6px !important;
+}
+
+/* Hide network compatibility warning */
+w3m-info-footer,
+wcm-info-footer,
+[data-testid="w3m-info-footer"],
+[data-testid="wcm-info-footer"] {
+  display: none !important;
+}
+
+/* Hide Send/Swap/Onramp features in wallet modal */
+/* Target legacy component names */
+w3m-button[data-variant="send"],
+wcm-button[data-variant="send"],
+w3m-send-button,
+wcm-send-button,
+[data-testid="w3m-send-button"],
+[data-testid="wcm-send-button"],
+w3m-swap-button,
+wcm-swap-button,
+w3m-onramp-button,
+wcm-onramp-button,
+w3m-wallet-features,
+wcm-wallet-features,
+w3m-account-token-send-button,
+wcm-account-token-send-button,
+w3m-wallet-send-button,
+wcm-wallet-send-button,
+/* Target new web components (wui-*) */
+wui-list-item[data-variant="send"],
+wui-list-item[data-type="send"],
+wui-list-button[data-variant="send"],
+wui-action-list-item[data-variant="send"],
+wui-list-item:has(wui-icon[name="send"]),
+wui-list-item:has(wui-icon[name="swap"]),
+wui-list-item:has(wui-icon[name="onramp"]),
+/* Position-based hiding - assuming Send is 2nd item after Fund wallet */
+w3m-account-view wui-list-item:nth-child(2),
+wcm-account-view wui-list-item:nth-child(2),
+wui-account-view wui-list-item:nth-child(2),
+/* Alternative selectors for various modal states */
+[data-view="Account"] wui-list-item:nth-child(2),
+[data-view="account"] wui-list-item:nth-child(2),
+/* Broad fallback - hide any list item with send/swap/onramp icons */
+wui-list-item[icon="send"],
+wui-list-item[icon="swap"],
+wui-list-item[icon="onramp"],
+wui-list-item[data-icon="send"],
+wui-list-item[data-icon="swap"],
+wui-list-item[data-icon="onramp"] {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
