@@ -9,9 +9,10 @@ import {
   getCurrentChainId,
   isOnGenLayerNetwork,
   getEthereumProvider,
+  switchToGenLayerNetwork,
   GENLAYER_CHAIN_ID,
 } from "./client";
-import { error, userRejected, warning } from "../utils/toast";
+import { error, userRejected, warning, success, info } from "../utils/toast";
 
 // localStorage key for tracking user's disconnect intent
 const DISCONNECT_FLAG = "wallet_disconnected";
@@ -29,6 +30,7 @@ interface WalletContextValue extends WalletState {
   connectWallet: () => Promise<string>;
   disconnectWallet: () => void;
   switchWalletAccount: () => Promise<string>;
+  switchToCorrectNetwork: () => Promise<void>;
 }
 
 // Create context with undefined default (will error if used outside Provider)
@@ -149,6 +151,17 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       // but we'll update state instead for better UX
       const correctNetwork = parseInt(chainId, 16) === GENLAYER_CHAIN_ID;
       const accounts = await getAccounts();
+
+      // Show notification when network changes
+      if (correctNetwork) {
+        success("Switched to GenLayer network", {
+          description: "You're now connected to the correct network."
+        });
+      } else {
+        warning("Network changed", {
+          description: "Please switch to GenLayer network to continue."
+        });
+      }
 
       setState((prev) => ({
         ...prev,
@@ -281,6 +294,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isOnCorrectNetwork: correctNetwork,
       });
 
+      // Show success notification
+      success("Account switched", {
+        description: `Now using ${newAddress.slice(0, 6)}...${newAddress.slice(-4)}`
+      });
+
+      // Trigger a custom event to notify other components to refresh data
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("walletAccountChanged", {
+          detail: { address: newAddress }
+        }));
+      }
+
       return newAddress;
     } catch (err: any) {
       console.error("Error switching account:", err);
@@ -299,11 +324,68 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  /**
+   * Switch to the correct GenLayer network
+   * This is a convenience function for when user is on wrong network
+   */
+  const switchToCorrectNetwork = useCallback(async () => {
+    try {
+      setState((prev) => ({ ...prev, isLoading: true }));
+
+      info("Switching network...", {
+        description: "Please confirm the network switch in MetaMask."
+      });
+
+      await switchToGenLayerNetwork();
+
+      // Wait a bit for the network to switch
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Verify we're on the correct network
+      const correctNetwork = await isOnGenLayerNetwork();
+      const chainId = await getCurrentChainId();
+      const accounts = await getAccounts();
+
+      setState({
+        address: accounts[0] || null,
+        chainId,
+        isConnected: accounts.length > 0,
+        isLoading: false,
+        isMetaMaskInstalled: true,
+        isOnCorrectNetwork: correctNetwork,
+      });
+
+      if (correctNetwork) {
+        success("Network switched successfully", {
+          description: "You're now connected to GenLayer network."
+        });
+      } else {
+        warning("Network switch may have failed", {
+          description: "Please check MetaMask and try again."
+        });
+      }
+    } catch (err: any) {
+      console.error("Error switching network:", err);
+      setState((prev) => ({ ...prev, isLoading: false }));
+
+      if (err.message?.includes("rejected")) {
+        userRejected("Network switch cancelled");
+      } else {
+        error("Failed to switch network", {
+          description: err.message || "Please try switching manually in MetaMask."
+        });
+      }
+
+      throw err;
+    }
+  }, []);
+
   const value: WalletContextValue = {
     ...state,
     connectWallet,
     disconnectWallet,
     switchWalletAccount,
+    switchToCorrectNetwork,
   };
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

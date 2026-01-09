@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, LogOut, AlertCircle, ExternalLink } from "lucide-react";
+import { User, LogOut, AlertCircle, ExternalLink, Loader2 } from "lucide-react";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { usePlayerPoints } from "@/lib/hooks/useFootballBets";
 import { success, error, userRejected } from "@/lib/utils/toast";
@@ -29,6 +29,7 @@ export function AccountPanel() {
     connectWallet,
     disconnectWallet,
     switchWalletAccount,
+    switchToCorrectNetwork,
   } = useWallet();
 
   const { data: points = 0 } = usePlayerPoints(address);
@@ -37,6 +38,7 @@ export function AccountPanel() {
   const [connectionError, setConnectionError] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
   const [isSwitching, setIsSwitching] = useState(false);
+  const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false);
 
   const handleConnect = async () => {
     if (!isMetaMaskInstalled) {
@@ -89,6 +91,23 @@ export function AccountPanel() {
       }
     } finally {
       setIsSwitching(false);
+    }
+  };
+
+  const handleSwitchNetwork = async () => {
+    try {
+      setIsSwitchingNetwork(true);
+      setConnectionError("");
+      await switchToCorrectNetwork();
+    } catch (err: any) {
+      console.error("Failed to switch network:", err);
+
+      // Don't show error if user cancelled
+      if (!err.message?.includes("rejected")) {
+        setConnectionError(err.message || "Failed to switch network");
+      }
+    } finally {
+      setIsSwitchingNetwork(false);
     }
   };
 
@@ -241,14 +260,33 @@ export function AccountPanel() {
           </div>
 
           {!isOnCorrectNetwork && (
-            <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/20">
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-              <AlertTitle>Network Warning</AlertTitle>
-              <AlertDescription>
-                You&apos;re not on the GenLayer network. Please switch networks in
-                MetaMask or try reconnecting.
-              </AlertDescription>
-            </Alert>
+            <div className="space-y-3">
+              <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/20">
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <AlertTitle>Network Warning</AlertTitle>
+                <AlertDescription>
+                  You&apos;re not on the GenLayer network. Please switch to continue using the app.
+                </AlertDescription>
+              </Alert>
+              <Button
+                onClick={handleSwitchNetwork}
+                variant="gradient"
+                className="w-full"
+                disabled={isSwitchingNetwork || isLoading}
+              >
+                {isSwitchingNetwork ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Switching Network...
+                  </>
+                ) : (
+                  <>
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Switch to GenLayer Network
+                  </>
+                )}
+              </Button>
+            </div>
           )}
 
           {connectionError && (

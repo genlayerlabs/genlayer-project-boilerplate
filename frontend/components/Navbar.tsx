@@ -4,12 +4,16 @@ import { useState, useEffect } from "react";
 import { AccountPanel } from "./AccountPanel";
 import { CreateBetModal } from "./CreateBetModal";
 import { useBets } from "@/lib/hooks/useFootballBets";
+import { useWallet } from "@/lib/genlayer/wallet";
 import { Logo, LogoMark } from "./Logo";
+import { Alert, AlertDescription } from "./ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const { data: bets } = useBets();
+  const { isConnected, isOnCorrectNetwork } = useWallet();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,10 +48,27 @@ export function Navbar() {
   const resolvedBets = bets?.filter(bet => bet.has_resolved).length || 0;
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out"
-      style={{ paddingTop: `${paddingTop}px` }}
-    >
+    <>
+      {/* Network Warning Banner */}
+      {isConnected && !isOnCorrectNetwork && (
+        <div className="fixed top-0 left-0 right-0 z-[60] bg-yellow-500/10 border-b border-yellow-500/20 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-4 py-2">
+            <Alert variant="default" className="bg-transparent border-0 p-0">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="text-sm text-yellow-400">
+                You&apos;re not on the GenLayer network. Please switch networks to continue.
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out"
+        style={{ 
+          paddingTop: `${paddingTop}px`, 
+          marginTop: isConnected && !isOnCorrectNetwork ? '48px' : '0' 
+        }}
+      >
       <div
         className="transition-all duration-500 ease-out"
         style={{
