@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import FootballBets from "../contracts/FootballBets";
 import { getContractAddress, getStudioUrl } from "../genlayer/client";
 import { useWallet } from "../genlayer/wallet";
@@ -52,6 +52,23 @@ export function useFootballBetsContract(): FootballBets | null {
  */
 export function useBets() {
   const contract = useFootballBetsContract();
+  const queryClient = useQueryClient();
+
+  // Listen for wallet account changes and refresh data
+  useEffect(() => {
+    const handleAccountChange = () => {
+      queryClient.invalidateQueries({ queryKey: ["bets"] });
+      queryClient.invalidateQueries({ queryKey: ["playerPoints"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("walletAccountChanged", handleAccountChange);
+      return () => {
+        window.removeEventListener("walletAccountChanged", handleAccountChange);
+      };
+    }
+  }, [queryClient]);
 
   return useQuery<Bet[], Error>({
     queryKey: ["bets"],
@@ -74,6 +91,21 @@ export function useBets() {
  */
 export function usePlayerPoints(address: string | null) {
   const contract = useFootballBetsContract();
+  const queryClient = useQueryClient();
+
+  // Listen for wallet account changes and refresh data
+  useEffect(() => {
+    const handleAccountChange = () => {
+      queryClient.invalidateQueries({ queryKey: ["playerPoints", address] });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("walletAccountChanged", handleAccountChange);
+      return () => {
+        window.removeEventListener("walletAccountChanged", handleAccountChange);
+      };
+    }
+  }, [queryClient, address]);
 
   return useQuery<number, Error>({
     queryKey: ["playerPoints", address],
@@ -96,6 +128,21 @@ export function usePlayerPoints(address: string | null) {
  */
 export function useLeaderboard() {
   const contract = useFootballBetsContract();
+  const queryClient = useQueryClient();
+
+  // Listen for wallet account changes and refresh data
+  useEffect(() => {
+    const handleAccountChange = () => {
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("walletAccountChanged", handleAccountChange);
+      return () => {
+        window.removeEventListener("walletAccountChanged", handleAccountChange);
+      };
+    }
+  }, [queryClient]);
 
   return useQuery<LeaderboardEntry[], Error>({
     queryKey: ["leaderboard"],

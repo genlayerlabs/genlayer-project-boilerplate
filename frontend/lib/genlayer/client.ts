@@ -205,28 +205,41 @@ export async function isOnGenLayerNetwork(): Promise<boolean> {
 
 /**
  * Connect to MetaMask and ensure we're on GenLayer network
+ * @param timeoutMs - Timeout in milliseconds (default: 30000 = 30 seconds)
  * @returns The connected address
  */
-export async function connectMetaMask(): Promise<string> {
+export async function connectMetaMask(timeoutMs: number = 30000): Promise<string> {
   if (!isMetaMaskInstalled()) {
     throw new Error("MetaMask is not installed");
   }
 
-  // Request accounts
-  const accounts = await requestAccounts();
+  // Create a timeout promise
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Connection timeout. Please try again."));
+    }, timeoutMs);
+  });
 
-  if (!accounts || accounts.length === 0) {
-    throw new Error("No accounts found");
-  }
+  // Race between the actual connection and timeout
+  const connectPromise = (async () => {
+    // Request accounts
+    const accounts = await requestAccounts();
 
-  // Check and switch to GenLayer network
-  const onCorrectNetwork = await isOnGenLayerNetwork();
+    if (!accounts || accounts.length === 0) {
+      throw new Error("No accounts found");
+    }
 
-  if (!onCorrectNetwork) {
-    await switchToGenLayerNetwork();
-  }
+    // Check and switch to GenLayer network
+    const onCorrectNetwork = await isOnGenLayerNetwork();
 
-  return accounts[0];
+    if (!onCorrectNetwork) {
+      await switchToGenLayerNetwork();
+    }
+
+    return accounts[0];
+  })();
+
+  return Promise.race([connectPromise, timeoutPromise]);
 }
 
 /**
