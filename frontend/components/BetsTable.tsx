@@ -3,7 +3,6 @@
 import { Loader2, Trophy, Clock, AlertCircle } from "lucide-react";
 import { useBets, useResolveBet, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
-import { error } from "@/lib/utils/toast";
 import { AddressDisplay } from "./AddressDisplay";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
@@ -12,16 +11,15 @@ import type { Bet } from "@/lib/contracts/types";
 export function BetsTable() {
   const contract = useFootballBetsContract();
   const { data: bets, isLoading, isError } = useBets();
-  const { address, isConnected, isLoading: isWalletLoading } = useWallet();
+  const { address, isConnected, isLoading: isWalletLoading, connectWallet } = useWallet();
   const { resolveBet, isResolving, resolvingBetId } = useResolveBet();
 
   const handleResolve = (betId: string) => {
     if (!address) {
-      error("Please connect your wallet to resolve bets");
+      connectWallet();
       return;
     }
 
-    // Confirmation popup
     const confirmed = confirm("Are you sure you want to resolve this bet? This action will determine the winner.");
 
     if (confirmed) {

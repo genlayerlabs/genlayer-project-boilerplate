@@ -2,8 +2,6 @@
 
 /**
  * Re-export wallet functionality from WalletProvider
- * This maintains backward compatibility with existing imports
- * All components that import from this file will now use shared context state
  */
 export { useWallet, WalletProvider } from "./WalletProvider";
 export type { WalletState } from "./WalletProvider";
