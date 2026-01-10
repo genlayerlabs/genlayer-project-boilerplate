@@ -23,7 +23,8 @@ cp .env.example .env
 
 3. Configure environment variables:
    - `NEXT_PUBLIC_CONTRACT_ADDRESS` - GenLayer Football Betting contract address
-   - `NEXT_PUBLIC_STUDIO_URL` - GenLayer Studio URL (default: https://studio.genlayer.com/api)
+   - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer RPC URL (default: https://studio.genlayer.com/api)
+   - `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` - WalletConnect Project ID (get free at https://cloud.walletconnect.com)
 
 ## Development
 
@@ -55,23 +56,40 @@ npm start
 
 ## Tech Stack
 
-- **Next.js 15** - React framework with App Router
+- **Next.js 16** - React framework with App Router
+- **React 19** - Latest React with concurrent features
 - **TypeScript** - Type safety
 - **Tailwind CSS v4** - Styling with custom glass-morphism theme
+- **RainbowKit** - Multi-wallet connection UI
+- **wagmi** - React hooks for Ethereum
+- **viem** - TypeScript Ethereum library
 - **genlayer-js** - GenLayer blockchain SDK
 - **TanStack Query (React Query)** - Data fetching and caching
 - **Radix UI** - Accessible component primitives
-- **shadcn/ui** - Pre-built UI components
 
-## Wallet Management
+## Wallet Connection
 
-The app uses GenLayer's account system:
-- **Create Account**: Generate a new private key
-- **Import Account**: Import existing private key
-- **Export Account**: Export your private key (secured)
-- **Disconnect**: Clear stored account data
+The app uses **RainbowKit** for multi-wallet support:
 
-Accounts are stored in browser's localStorage for development convenience.
+### Supported Wallets
+- **MetaMask** - Browser extension & mobile
+- **WalletConnect** - Connect any WalletConnect-compatible wallet
+- **Coinbase Wallet** - Coinbase's self-custody wallet
+- **Rainbow** - Mobile-first Ethereum wallet
+- **And many more** - RainbowKit supports 100+ wallets
+
+### Getting WalletConnect Project ID
+1. Go to [WalletConnect Cloud](https://cloud.walletconnect.com)
+2. Create a free account
+3. Create a new project
+4. Copy the Project ID
+5. Add to your `.env` file as `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID`
+
+### Features
+- **One-click connection** - Simple modal to connect any supported wallet
+- **Network switching** - Automatic prompt to switch to GenLayer network
+- **Account management** - View balance, switch accounts, disconnect
+- **Persistent sessions** - Stay connected across page refreshes
 
 ## Features
 
@@ -81,4 +99,4 @@ Accounts are stored in browser's localStorage for development convenience.
 - **Leaderboard**: Track top players by points earned from correct predictions
 - **Player Stats**: View your points and ranking in the community
 - **Glass-morphism UI**: Premium dark theme with OKLCH colors, backdrop blur effects, and smooth animations
-- **Real-time Updates**: Automatic data fetching with 3-second polling intervals via TanStack Query
+- **Real-time Updates**: Automatic data fetching with TanStack Query
