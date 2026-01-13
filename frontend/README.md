@@ -82,3 +82,23 @@ Accounts are stored in browser's localStorage for development convenience.
 - **Player Stats**: View your points and ranking in the community
 - **Glass-morphism UI**: Premium dark theme with OKLCH colors, backdrop blur effects, and smooth animations
 - **Real-time Updates**: Automatic data fetching with 3-second polling intervals via TanStack Query
+
+## Beginner Example: Hello GenLayer Contract
+
+A minimal beginner-friendly GenLayer contract example added to the boilerplate.
+
+File:
+examples/hello_genlayer.py
+
+What it does:
+- Stores a simple message string
+- Allows reading the message using get_message()
+- Allows updating the message using set_message()
+
+Purpose:
+This example helps new developers quickly understand:
+- Basic GenLayer contract structure
+- How to define state variables
+- How to create read and write functions
+- How to deploy and interact using GenLayer Studio
+
