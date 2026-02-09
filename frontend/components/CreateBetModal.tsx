@@ -109,9 +109,9 @@ export function CreateBetModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="gradient" disabled={!isConnected || !address || isLoading}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Bet
+        <Button variant="gradient" disabled={!isConnected || !address || isLoading} className="px-3 md:px-4">
+          <Plus className="w-4 h-4 md:mr-2" />
+          <span className="hidden md:inline">Create Bet</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="brand-card border-2 sm:max-w-[500px]">
@@ -197,11 +197,10 @@ export function CreateBetModal() {
                   setErrors({ ...errors, predictedWinner: "" });
                 }}
                 disabled={!team1.trim()}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  predictedWinner === "1"
+                className={`p-4 rounded-lg border-2 transition-all ${predictedWinner === "1"
                     ? "border-accent bg-accent/20 text-accent"
                     : "border-white/10 hover:border-white/20"
-                } ${!team1.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  } ${!team1.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 <div className="font-semibold text-sm">{team1 || "Team 1"}</div>
                 <div className="text-xs text-muted-foreground mt-1">Wins</div>
@@ -213,11 +212,10 @@ export function CreateBetModal() {
                   setErrors({ ...errors, predictedWinner: "" });
                 }}
                 disabled={!team1.trim() || !team2.trim()}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  predictedWinner === "0"
+                className={`p-4 rounded-lg border-2 transition-all ${predictedWinner === "0"
                     ? "border-yellow-500 bg-yellow-500/20 text-yellow-400"
                     : "border-white/10 hover:border-white/20"
-                } ${!team1.trim() || !team2.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  } ${!team1.trim() || !team2.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 <div className="font-semibold text-sm">Draw</div>
                 <div className="text-xs text-muted-foreground mt-1">Tie</div>
@@ -229,11 +227,10 @@ export function CreateBetModal() {
                   setErrors({ ...errors, predictedWinner: "" });
                 }}
                 disabled={!team2.trim()}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  predictedWinner === "2"
+                className={`p-4 rounded-lg border-2 transition-all ${predictedWinner === "2"
                     ? "border-accent bg-accent/20 text-accent"
                     : "border-white/10 hover:border-white/20"
-                } ${!team2.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                  } ${!team2.trim() ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
               >
                 <div className="font-semibold text-sm">{team2 || "Team 2"}</div>
                 <div className="text-xs text-muted-foreground mt-1">Wins</div>
