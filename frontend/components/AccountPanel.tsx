@@ -97,9 +97,9 @@ export function AccountPanel() {
     return (
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button variant="gradient" disabled={isLoading}>
-            <User className="w-4 h-4 mr-2" />
-            Connect Wallet
+          <Button variant="gradient" disabled={isLoading} className="px-3 md:px-4">
+            <User className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">Connect Wallet</span>
           </Button>
         </DialogTrigger>
         <DialogContent className="brand-card border-2">
@@ -226,11 +226,10 @@ export function AccountPanel() {
             <p className="text-sm text-muted-foreground">Network Status</p>
             <div className="flex items-center gap-2">
               <div
-                className={`w-2 h-2 rounded-full ${
-                  isOnCorrectNetwork
+                className={`w-2 h-2 rounded-full ${isOnCorrectNetwork
                     ? "bg-green-500"
                     : "bg-yellow-500 animate-pulse"
-                }`}
+                  }`}
               />
               <span className="text-sm">
                 {isOnCorrectNetwork
