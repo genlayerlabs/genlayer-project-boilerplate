@@ -163,8 +163,8 @@ def test_non_freelancer_cannot_submit_deliverables(setup_unresolved):
 
 
 @pytest.mark.order(7)
-def test_cannot_submit_evidence_twice(setup_unresolved):
-    """A party cannot overwrite their evidence once submitted."""
+def test_client_cannot_raise_dispute_twice(setup_unresolved):
+    """Client cannot overwrite their dispute evidence once submitted."""
     # Submit client evidence first
     setup_unresolved["client"].send_transaction(
         sender=setup_unresolved["client_account"],
@@ -172,7 +172,7 @@ def test_cannot_submit_evidence_twice(setup_unresolved):
         function="raise_dispute",
         args=["The README is missing."],
     )
-    # Try to submit again
+    # Try to raise dispute again
     try:
         setup_unresolved["client"].send_transaction(
             sender=setup_unresolved["client_account"],
@@ -195,7 +195,7 @@ def test_cannot_resolve_without_both_evidences(setup_unresolved):
         function="get_dispute_status",
         args=[],
     )
-    assert status["client_evidence"], "Precondition failed: run test_cannot_submit_evidence_twice first."
+    assert status["client_evidence"], "Precondition failed: run test_client_cannot_raise_dispute_twice first."
 
     try:
         setup_unresolved["client"].send_transaction(
@@ -207,3 +207,26 @@ def test_cannot_resolve_without_both_evidences(setup_unresolved):
         pytest.fail("Expected an exception but none was raised.")
     except Exception as e:
         assert "Freelancer has not submitted evidence" in str(e)
+
+
+@pytest.mark.order(9)
+def test_freelancer_cannot_submit_evidence_twice(setup_unresolved):
+    """Freelancer cannot overwrite their rebuttal evidence once submitted."""
+    # Submit freelancer evidence first
+    setup_unresolved["client"].send_transaction(
+        sender=setup_unresolved["freelancer_account"],
+        contract_address=setup_unresolved["contract_address"],
+        function="submit_evidence",
+        args=["Initial rebuttal."],
+    )
+    # Try to submit again
+    try:
+        setup_unresolved["client"].send_transaction(
+            sender=setup_unresolved["freelancer_account"],
+            contract_address=setup_unresolved["contract_address"],
+            function="submit_evidence",
+            args=["Overwrite attempt."],
+        )
+        pytest.fail("Expected an exception but none was raised.")
+    except Exception as e:
+        assert "already submitted" in str(e)
