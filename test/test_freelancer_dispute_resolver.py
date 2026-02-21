@@ -13,24 +13,24 @@ JOB_DESCRIPTION = (
 TEST_DELIVERABLES_URL = "https://github.com/genlayerlabs/genlayer-studio"
 
 
-@pytest.fixture(scope="module")
-def setup():
+def _deploy_contract(submit_deliverables: bool = False) -> dict:
     from genlayer_py.testing import GenLayerTestClient
     client = GenLayerTestClient(studio_url=STUDIO_URL)
     accounts = client.get_accounts()
-
     assert len(accounts) >= 3, "GenLayer Studio must have at least 3 accounts configured."
-
-    client_account = accounts[0]
-    freelancer_account = accounts[1]
-    third_party_account = accounts[2]
-
+    client_account, freelancer_account, third_party_account = accounts[0], accounts[1], accounts[2]
     contract_address = client.deploy_contract(
         sender=client_account,
         contract_file="contracts/freelancer_dispute_resolver.py",
         args=[freelancer_account["address"], JOB_DESCRIPTION],
     )
-
+    if submit_deliverables:
+        client.send_transaction(
+            sender=freelancer_account,
+            contract_address=contract_address,
+            function="submit_deliverables",
+            args=[TEST_DELIVERABLES_URL],
+        )
     return {
         "client": client,
         "contract_address": contract_address,
@@ -38,42 +38,17 @@ def setup():
         "freelancer_account": freelancer_account,
         "third_party_account": third_party_account,
     }
+
+
+@pytest.fixture(scope="module")
+def setup():
+    return _deploy_contract(submit_deliverables=False)
 
 
 @pytest.fixture(scope="module")
 def setup_unresolved():
     """Fresh contract instance for negative/access-control tests."""
-    from genlayer_py.testing import GenLayerTestClient
-    client = GenLayerTestClient(studio_url=STUDIO_URL)
-    accounts = client.get_accounts()
-
-    assert len(accounts) >= 3, "GenLayer Studio must have at least 3 accounts configured."
-
-    client_account = accounts[0]
-    freelancer_account = accounts[1]
-    third_party_account = accounts[2]
-
-    contract_address = client.deploy_contract(
-        sender=client_account,
-        contract_file="contracts/freelancer_dispute_resolver.py",
-        args=[freelancer_account["address"], JOB_DESCRIPTION],
-    )
-
-    # Submit deliverables so access-control tests can run
-    client.send_transaction(
-        sender=freelancer_account,
-        contract_address=contract_address,
-        function="submit_deliverables",
-        args=[TEST_DELIVERABLES_URL],
-    )
-
-    return {
-        "client": client,
-        "contract_address": contract_address,
-        "client_account": client_account,
-        "freelancer_account": freelancer_account,
-        "third_party_account": third_party_account,
-    }
+    return _deploy_contract(submit_deliverables=True)
 
 
 # ── Happy path tests (must run in order) ─────────────────────────────────────
@@ -129,7 +104,7 @@ def test_freelancer_submits_evidence(setup):
     setup["client"].send_transaction(
         sender=setup["freelancer_account"],
         contract_address=setup["contract_address"],
-        function="raise_dispute",
+        function="submit_evidence",
         args=["The README is in the repo root. Error handling is in scraper.py lines 45-67."],
     )
     result = setup["client"].call_contract(
@@ -157,6 +132,18 @@ def test_resolve_dispute(setup):
     )
     assert verdict in ("freelancer", "client", "draw")
 
+    # Verify double-resolution is rejected
+    try:
+        setup["client"].send_transaction(
+            sender=setup["third_party_account"],
+            contract_address=setup["contract_address"],
+            function="resolve_dispute",
+            args=[],
+        )
+        pytest.fail("Expected an exception but none was raised.")
+    except Exception as e:
+        assert "already been resolved" in str(e)
+
 
 # ── Negative / access control tests (isolated fresh contract) ─────────────────
 
@@ -172,7 +159,7 @@ def test_non_freelancer_cannot_submit_deliverables(setup_unresolved):
         )
         pytest.fail("Expected an exception but none was raised.")
     except Exception as e:
-        assert "Only the freelancer" in str(e) or "dispute" in str(e)
+        assert "Only the freelancer" in str(e)
 
 
 @pytest.mark.order(7)
@@ -201,6 +188,15 @@ def test_cannot_submit_evidence_twice(setup_unresolved):
 @pytest.mark.order(8)
 def test_cannot_resolve_without_both_evidences(setup_unresolved):
     """Resolving without freelancer evidence should fail."""
+    # Precondition: client evidence must have been submitted by test 7
+    status = setup_unresolved["client"].call_contract(
+        sender=setup_unresolved["client_account"],
+        contract_address=setup_unresolved["contract_address"],
+        function="get_dispute_status",
+        args=[],
+    )
+    assert status["client_evidence"], "Precondition failed: run test_cannot_submit_evidence_twice first."
+
     try:
         setup_unresolved["client"].send_transaction(
             sender=setup_unresolved["third_party_account"],

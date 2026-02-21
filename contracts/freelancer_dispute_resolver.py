@@ -38,22 +38,30 @@ class FreelancerDisputeResolver(gl.Contract):
 
     @gl.public.write
     def raise_dispute(self, evidence: str) -> None:
+        """Called by the client to open a dispute with their complaint."""
         if self.resolved:
             raise Exception("This contract has already been resolved.")
         if not self.deliverables_url:
             raise Exception("Freelancer must submit deliverables before a dispute can be raised.")
-        sender = gl.message.sender_account
-        if sender == self.client:
-            if self.client_evidence:
-                raise Exception("Client has already submitted evidence.")
-            self.client_evidence = evidence
-        elif sender == self.freelancer:
-            if self.freelancer_evidence:
-                raise Exception("Freelancer has already submitted evidence.")
-            self.freelancer_evidence = evidence
-        else:
-            raise Exception("Only the client or freelancer can submit evidence.")
+        if gl.message.sender_account != self.client:
+            raise Exception("Only the client can raise a dispute.")
+        if self.client_evidence:
+            raise Exception("Client has already submitted evidence.")
+        self.client_evidence = evidence
         self.dispute_raised = True
+
+    @gl.public.write
+    def submit_evidence(self, evidence: str) -> None:
+        """Called by the freelancer to submit their rebuttal evidence."""
+        if self.resolved:
+            raise Exception("This contract has already been resolved.")
+        if not self.dispute_raised:
+            raise Exception("No dispute has been raised yet.")
+        if gl.message.sender_account != self.freelancer:
+            raise Exception("Only the freelancer can submit rebuttal evidence.")
+        if self.freelancer_evidence:
+            raise Exception("Freelancer has already submitted evidence.")
+        self.freelancer_evidence = evidence
 
     @gl.public.write
     def resolve_dispute(self) -> None:
@@ -75,6 +83,9 @@ class FreelancerDisputeResolver(gl.Contract):
             return gl.nondet.web.get(deliverables_url, mode="text")
 
         deliverables_content = gl.eq_principle.strict_eq(fetch_deliverables)
+
+        if not deliverables_content or not deliverables_content.strip():
+            raise Exception("Could not retrieve deliverables content from the submitted URL.")
 
         prompt = f"""
 You are an impartial and expert freelance arbitrator. Your job is to fairly resolve
