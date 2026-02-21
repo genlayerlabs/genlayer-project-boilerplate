@@ -42,8 +42,12 @@ class FreelancerDisputeResolver(gl.Contract):
             raise Exception("Freelancer must submit deliverables before a dispute can be raised.")
         sender = gl.message.sender_account
         if sender == self.client:
+            if self.client_evidence:
+                raise Exception("Client has already submitted evidence.")
             self.client_evidence = evidence
         elif sender == self.freelancer:
+            if self.freelancer_evidence:
+                raise Exception("Freelancer has already submitted evidence.")
             self.freelancer_evidence = evidence
         else:
             raise Exception("Only the client or freelancer can submit evidence.")
@@ -65,7 +69,6 @@ class FreelancerDisputeResolver(gl.Contract):
         client_evidence = self.client_evidence
         freelancer_evidence = self.freelancer_evidence
 
-        # Updated to GenLayer SDK v2 API
         def fetch_deliverables() -> str:
             return gl.nondet.web.get(deliverables_url, mode="text")
 
@@ -113,11 +116,10 @@ The 'reasoning' must logically support the verdict based on the job description
 and the evidence provided. Minor wording differences in 'reasoning' are acceptable.""",
         )
 
-        # Safe JSON parsing with validation
         try:
             parsed = json.loads(raw_verdict)
-        except json.JSONDecodeError:
-            raise Exception(f"Arbitration returned invalid JSON: {raw_verdict[:200]}")
+        except json.JSONDecodeError as err:
+            raise Exception(f"Arbitration returned invalid JSON: {raw_verdict[:200]}") from err
 
         verdict = parsed.get("verdict", "")
         reasoning = parsed.get("reasoning", "")
