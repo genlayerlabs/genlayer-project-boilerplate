@@ -32,6 +32,8 @@ class FreelancerDisputeResolver(gl.Contract):
             raise Exception("Only the freelancer can submit deliverables.")
         if self.resolved:
             raise Exception("This contract has already been resolved.")
+        if self.dispute_raised:
+            raise Exception("Cannot change deliverables after a dispute has been raised.")
         self.deliverables_url = deliverables_url
 
     @gl.public.write
