@@ -1,9 +1,7 @@
 import pytest
 import os
-from genlayer import Address
 
 STUDIO_URL = os.getenv("GENLAYER_STUDIO_URL", "http://localhost:8080")
-CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS", "")
 
 JOB_DESCRIPTION = (
     "Build a Python web scraper that collects product names and prices from "
@@ -16,7 +14,7 @@ TEST_DELIVERABLES_URL = "https://github.com/genlayerlabs/genlayer-studio"
 
 
 @pytest.fixture(scope="module")
-def setup(request):
+def setup():
     from genlayer_py.testing import GenLayerTestClient
     client = GenLayerTestClient(studio_url=STUDIO_URL)
     accounts = client.get_accounts()
@@ -39,6 +37,7 @@ def setup(request):
     }
 
 
+@pytest.mark.order(1)
 def test_initial_state(setup):
     result = setup["client"].call_contract(
         sender=setup["client_account"],
@@ -50,6 +49,7 @@ def test_initial_state(setup):
     assert result["deliverables_url"] == ""
 
 
+@pytest.mark.order(2)
 def test_freelancer_submits_deliverables(setup):
     setup["client"].send_transaction(
         sender=setup["freelancer_account"],
@@ -66,6 +66,7 @@ def test_freelancer_submits_deliverables(setup):
     assert result["deliverables_url"] == TEST_DELIVERABLES_URL
 
 
+@pytest.mark.order(3)
 def test_client_raises_dispute(setup):
     setup["client"].send_transaction(
         sender=setup["client_account"],
@@ -82,6 +83,7 @@ def test_client_raises_dispute(setup):
     assert result["dispute_raised"] is True
 
 
+@pytest.mark.order(4)
 def test_freelancer_submits_evidence(setup):
     setup["client"].send_transaction(
         sender=setup["freelancer_account"],
@@ -98,6 +100,7 @@ def test_freelancer_submits_evidence(setup):
     assert "README" in result["freelancer_evidence"]
 
 
+@pytest.mark.order(5)
 def test_resolve_dispute(setup):
     setup["client"].send_transaction(
         sender=setup["third_party_account"],

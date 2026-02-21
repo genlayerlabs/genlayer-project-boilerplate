@@ -1,7 +1,6 @@
 # { "Depends": "py-genlayer:test" }
 from genlayer import *
 import json
-import typing
 
 class FreelancerDisputeResolver(gl.Contract):
     job_description: str
@@ -66,10 +65,11 @@ class FreelancerDisputeResolver(gl.Contract):
         client_evidence = self.client_evidence
         freelancer_evidence = self.freelancer_evidence
 
+        # Updated to GenLayer SDK v2 API
         def fetch_deliverables() -> str:
-            return gl.get_webpage(deliverables_url, mode="text")
+            return gl.nondet.web.get(deliverables_url, mode="text")
 
-        deliverables_content = gl.eq_principle_strict_eq(fetch_deliverables)
+        deliverables_content = gl.eq_principle.strict_eq(fetch_deliverables)
 
         prompt = f"""
 You are an impartial and expert freelance arbitrator. Your job is to fairly resolve
@@ -102,20 +102,31 @@ Do not include any text outside the JSON object. Do not use markdown code fences
 """
 
         def run_arbitration() -> str:
-            result = gl.exec_prompt(prompt)
+            result = gl.nondet.exec_prompt(prompt)
             result = result.replace("```json", "").replace("```", "").strip()
             return result
 
-        raw_verdict = gl.eq_principle_prompt_comparative(
+        raw_verdict = gl.eq_principle.prompt_comparative(
             run_arbitration,
             """The 'verdict' field must be one of: 'freelancer', 'client', or 'draw'.
 The 'reasoning' must logically support the verdict based on the job description
 and the evidence provided. Minor wording differences in 'reasoning' are acceptable.""",
         )
 
-        parsed = json.loads(raw_verdict)
-        self.verdict = parsed["verdict"]
-        self.verdict_reasoning = parsed["reasoning"]
+        # Safe JSON parsing with validation
+        try:
+            parsed = json.loads(raw_verdict)
+        except json.JSONDecodeError:
+            raise Exception(f"Arbitration returned invalid JSON: {raw_verdict[:200]}")
+
+        verdict = parsed.get("verdict", "")
+        reasoning = parsed.get("reasoning", "")
+
+        if verdict not in ("freelancer", "client", "draw"):
+            raise Exception(f"Invalid verdict '{verdict}'. Must be 'freelancer', 'client', or 'draw'.")
+
+        self.verdict = verdict
+        self.verdict_reasoning = reasoning
         self.resolved = True
 
     @gl.public.view

@@ -14,13 +14,13 @@ const JOB_DESCRIPTION: string =
   process.env.JOB_DESCRIPTION ||
   "Build a Python web scraper that collects product names and prices " +
   "from an e-commerce site and outputs them as a CSV file. " +
-  "The code must be documented, include error handling, and be hosted " +
+  "The code must be well-documented, include error handling, and be hosted " +
   "in a public GitHub repository with a clear README.";
 
 async function main() {
   console.log("🚀 Deploying FreelancerDisputeResolver...");
   console.log(`   Freelancer address : ${FREELANCER_ADDRESS}`);
-  console.log(`   Job description    : ${JOB_DESCRIPTION.slice(0, 80)}...`);
+  console.log(`   Job description    : ${JOB_DESCRIPTION.length > 80 ? JOB_DESCRIPTION.slice(0, 80) + "..." : JOB_DESCRIPTION}`);
 
   const contractPath = path.resolve(
     __dirname,
