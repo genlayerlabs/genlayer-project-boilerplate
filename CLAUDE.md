@@ -118,6 +118,18 @@ The GenVM linter catches contract issues before deployment:
 - Wallet context: `frontend/lib/genlayer/WalletProvider.tsx`
 - GenLayer client: `frontend/lib/genlayer/client.ts`
 
+## AI Agent Skills
+
+Install the GenLayer development skills for enhanced agent-assisted workflows:
+
+```bash
+# In Claude Code:
+/plugin marketplace add genlayerlabs/skills
+/plugin install genlayer-dev@genlayerlabs
+```
+
+Skills available: `genvm-lint` (linting), `direct-tests` (direct mode testing), `integration-tests` (integration testing).
+
 ---
 
 ## GenLayer Technical Reference
