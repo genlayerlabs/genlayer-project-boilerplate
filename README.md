@@ -5,104 +5,139 @@
 [![Twitter](https://img.shields.io/twitter/url/https/twitter.com/yeagerai.svg?style=social&label=Follow%20%40GenLayer)](https://x.com/GenLayer)
 [![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
 
-## 👀 About
+## About
 This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
 
-## 📦 What's included
-- Basic requirements to deploy and test your intelligent contracts locally
-- Configuration file template
-<!-- - Test functions to write complete end-to-end tests -->
-- An example of an intelligent contract (Football Bets)
-- Example end-to-end tests for the contract provided
+## What's included
+- An example intelligent contract (Football Bets) with web access and LLM integration
+- **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
+- **Integration tests** — full end-to-end tests against GenLayer Studio
+- **Contract linting** — static analysis to catch common contract issues before deployment
+- **CI pipeline** — GitHub Actions workflow for linting and direct tests
 - A production-ready Next.js 15 frontend with TypeScript, TanStack Query, and Radix UI
+- Configuration file template and deployment scripts
 
-## 🛠️ Requirements
-- A running GenLayer Studio (Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or work with the hosted version of [GenLayer Studio](https://studio.genlayer.com/)). If you are working locally, this repository code does not need to be located in the same directory as the Genlayer Studio.
-- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed. To install or update the GenLayer CLI run `npm install -g genlayer`
+## Requirements
+- Python >= 3.12
+- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed: `npm install -g genlayer`
+- GenLayer Studio (for integration tests and deployment): Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or use the hosted [GenLayer Studio](https://studio.genlayer.com/)
 
-## 🚀 Steps to run this example
+## Project Structure
 
-### 1. Deploy the contract
-   Deploy the contract from `/contracts/football_bets.py` using the GenLayer CLI:
-   1. Choose the network that you want to use (studionet, localnet, or tesnet-*): `genlayer network`
-   2. Execute the deploy command `genlayer deploy`. This command is going to execute the deploy script located in `/deploy/deployScript.ts`
+```
+contracts/              # Python intelligent contracts
+tests/
+  direct/               # Fast in-memory tests (no Studio required)
+    test_create_bet.py   # Bet creation logic
+    test_resolve_bet.py  # Bet resolution with web/LLM mocks
+    test_views.py        # Read-only view methods
+  integration/           # Full tests against GenLayer Studio
+    test_football_bets.py
+    fixtures.py          # Expected state fixtures
+frontend/               # Next.js 15 app (TypeScript, TanStack Query, Radix UI)
+deploy/                 # TypeScript deployment scripts
+gltest.config.yaml      # Test runner network configuration
+pyproject.toml          # Python/pytest configuration
+.github/workflows/      # CI pipeline
+```
 
-### 2. Setup the frontend environment
-  1. All the content of the dApp is located in the `/frontend` folder.
-  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_GENLAYER_RPC_URL value is the backend of the hosted GenLayer Studio.
-  3. Add the deployed contract address to the `/frontend/.env` under the variable `NEXT_PUBLIC_CONTRACT_ADDRESS`
+## Quick Start
 
-### 4. Run the frontend Next.js app
-   Execute the following commands in your terminal:
+### 1. Set up Python environment
 
-   **Using bun:**
-   ```shell
-   cd frontend
-   bun install
-   bun dev
-   ```
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-   **Using npm:**
-   ```shell
-   cd frontend
-   npm install
-   npm run dev
-   ```
+### 2. Lint your contracts
 
-   The terminal should display a link to access your frontend app (usually at <http://localhost:3000/>).
-   For more information on the code see [GenLayerJS](https://github.com/yeagerai/genlayer-js).
-   
-### 5. Test contracts
-1. Install the Python packages listed in the `requirements.txt` file in a virtual environment.
-2. Make sure your GenLayer Studio is running. Then execute the following command in your terminal:
-   ```shell
-   gltest
-   ```
+Run the GenVM linter to catch issues before deployment:
 
-## ⚽ How the Football Bets Contract Works
+```shell
+genvm-lint check contracts/football_bets.py
+```
 
-The Football Bets contract allows users to create bets for football matches, resolve those bets, and earn points for correct bets. Here's a breakdown of its main functionalities:
+The linter catches:
+- Forbidden imports and non-deterministic calls
+- Invalid storage types (must use `TreeMap`, `DynArray`, `u256`, etc.)
+- Missing decorators and return type annotations
+- Non-deterministic operations outside equivalence principle blocks
+- And [20+ other rules](https://github.com/genlayerlabs/genvm-linter)
 
-1. Creating Bets:
-   - Users can create a bet for a specific football match by providing the game date, team names, and their predicted winner.
-   - The contract checks if the game has already finished and if the user has already made a bet for this match.
+### 3. Run direct mode tests
 
-2. Resolving Bets:
-   - After a match has concluded, users can resolve their bets.
-   - The contract fetches the actual match result from a specified URL.
-   - If the Bet was correct, the user earns a point.
+Direct mode tests run contracts in-memory without needing GenLayer Studio. They use mocks for web requests and LLM calls, giving you fast feedback (~milliseconds per test):
 
-3. Querying Data:
-   - Users can retrieve all bets.
-   - The contract also allows querying of points, either for all players or for a specific player.
+```shell
+pytest tests/direct/ -v
+```
 
-4. Getting Points:
-   - Points are awarded for correct bets.
-   - Users can check their total points or the points of any player.
+Direct mode features used in these tests:
+- `direct_deploy("contracts/file.py")` — deploy contract in memory
+- `direct_vm.sender = address` — set transaction sender
+- `direct_vm.mock_web(pattern, response)` — mock HTTP/render calls
+- `direct_vm.mock_llm(pattern, response)` — mock LLM responses
+- `direct_vm.expect_revert("message")` — assert expected failures
+- `direct_vm.clear_mocks()` — reset mocks between calls
 
-## 🧪 Tests
+### 4. Deploy the contract
 
-This project includes integration tests that interact with the contract deployed in the Studio. These tests cover the main functionalities of the Football Bets contract:
+1. Choose your network: `genlayer network`
+2. Deploy: `genlayer deploy` (runs the script in `/deploy/deployScript.ts`)
 
-1. Creating a bet
-2. Resolving a bet
-3. Querying bets for a player
-4. Querying points for a player
+### 5. Run integration tests
 
-The tests simulate real-world interactions with the contract, ensuring that it behaves correctly under various scenarios. They use the GenLayer Studio to deploy and interact with the contract, providing a comprehensive check of the contract's functionality in a controlled environment.
+Integration tests deploy the contract to GenLayer Studio and test with real consensus:
 
-To run the tests, use the `gltest` command as mentioned in the "Steps to run this example" section.
+```shell
+gltest tests/integration/ -v -s
+```
 
+These require GenLayer Studio running (local or hosted).
 
-## 💬 Community
-Connect with the GenLayer community to discuss, collaborate, and share insights:
-- **[Discord Channel](https://discord.gg/8Jm4v89VAu)**: Our primary hub for discussions, support, and announcements.
-- **[Telegram Group](https://t.me/genlayer)**: For more informal chats and quick updates.
+### 6. Set up the frontend
 
-Your continuous feedback drives better product development. Please engage with us regularly to test, discuss, and improve GenLayer.
+1. Copy `frontend/.env.example` to `frontend/.env`
+2. Add your deployed contract address as `NEXT_PUBLIC_CONTRACT_ADDRESS`
+3. Run:
 
-## 📖 Documentation
-For detailed information on how to use GenLayerJS SDK, please refer to our [documentation](https://docs.genlayer.com/).
+```shell
+cd frontend
+npm install
+npm run dev
+```
 
-## 📜 License
+The app will be available at http://localhost:3000/.
+
+## How the Football Bets Contract Works
+
+1. **Creating Bets**: Users bet on a football match by providing the game date, teams, and predicted winner.
+2. **Resolving Bets**: After the match, the contract fetches results from BBC Sport, uses an LLM to extract the score, and validates via the equivalence principle.
+3. **Points**: Correct predictions earn points. Users can query their points or the leaderboard.
+
+## Testing Strategy
+
+| Test Type | Command | Speed | Requires Studio |
+|-----------|---------|-------|-----------------|
+| **Lint** | `genvm-lint check contracts/*.py` | ~250ms | No |
+| **Direct** | `pytest tests/direct/ -v` | ~ms/test | No |
+| **Integration** | `gltest tests/integration/ -v -s` | ~min/test | Yes |
+
+**Recommended workflow:**
+1. Lint after every contract change
+2. Run direct tests frequently during development
+3. Run integration tests before deployment to verify consensus behavior
+
+For AI coding agents (Claude Code, Cursor, etc.), the linter and direct tests provide the fast feedback loop needed for iterative development without requiring a running Studio instance.
+
+## Community
+- **[Discord](https://discord.gg/8Jm4v89VAu)**: Discussions, support, and announcements
+- **[Telegram](https://t.me/genlayer)**: Informal chats and quick updates
+
+## Documentation
+For detailed information, see our [documentation](https://docs.genlayer.com/).
+
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
