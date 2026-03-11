@@ -36,7 +36,7 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
         {"status": 200, "body": "Match results available."},
     )
     direct_vm.mock_llm(
-        r".*Spain.*Italy.*",
+        r".*Extract the match result.*",
         json.dumps({"score": "1:0", "winner": 1}),
     )
     contract.resolve_bet("2024-06-20_spain_italy")
@@ -48,7 +48,7 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
         {"status": 200, "body": "Match results available."},
     )
     direct_vm.mock_llm(
-        r".*Denmark.*England.*",
+        r".*Extract the match result.*",
         json.dumps({"score": "1:1", "winner": 0}),
     )
     contract.resolve_bet("2024-06-20_denmark_england")
