@@ -13,12 +13,12 @@ def test_empty_points(direct_deploy):
     assert contract.get_points() == {}
 
 
-def test_get_player_points_default_zero(direct_deploy, direct_alice):
+def test_get_player_points_default_zero(direct_deploy, addr):
     contract = direct_deploy("contracts/football_bets.py")
-    assert contract.get_player_points(direct_alice.as_hex) == 0
+    assert contract.get_player_points(addr.alice) == 0
 
 
-def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
+def test_points_accumulate(direct_vm, direct_deploy, direct_alice, addr):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -49,7 +49,7 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
     )
     contract.resolve_bet("2024-06-20_denmark_england")
 
-    assert contract.get_player_points(direct_alice.as_hex) == 2
+    assert contract.get_player_points(addr.alice) == 2
 
     points = contract.get_points()
-    assert points[direct_alice.as_hex] == 2
+    assert points[addr.alice] == 2

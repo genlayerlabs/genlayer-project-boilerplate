@@ -1,14 +1,14 @@
 """Tests for bet creation logic (no mocks needed — create_bet is deterministic)."""
 
 
-def test_create_bet(direct_vm, direct_deploy, direct_alice):
+def test_create_bet(direct_vm, direct_deploy, direct_alice, addr):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 
     bets = contract.get_bets()
-    player_bets = bets[direct_alice.as_hex]
+    player_bets = bets[addr.alice]
     bet = player_bets["2024-06-20_spain_italy"]
     assert bet.team1 == "Spain"
     assert bet.team2 == "Italy"
@@ -22,7 +22,7 @@ def test_create_bet(direct_vm, direct_deploy, direct_alice):
     )
 
 
-def test_create_multiple_bets(direct_vm, direct_deploy, direct_alice):
+def test_create_multiple_bets(direct_vm, direct_deploy, direct_alice, addr):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -30,9 +30,9 @@ def test_create_multiple_bets(direct_vm, direct_deploy, direct_alice):
     contract.create_bet("2024-06-20", "Denmark", "England", "0")
 
     bets = contract.get_bets()
-    assert len(bets[direct_alice.as_hex]) == 2
-    assert "2024-06-20_spain_italy" in bets[direct_alice.as_hex]
-    assert "2024-06-20_denmark_england" in bets[direct_alice.as_hex]
+    assert len(bets[addr.alice]) == 2
+    assert "2024-06-20_spain_italy" in bets[addr.alice]
+    assert "2024-06-20_denmark_england" in bets[addr.alice]
 
 
 def test_create_duplicate_bet_fails(direct_vm, direct_deploy, direct_alice):
@@ -46,7 +46,7 @@ def test_create_duplicate_bet_fails(direct_vm, direct_deploy, direct_alice):
 
 
 def test_different_users_can_bet_same_match(
-    direct_vm, direct_deploy, direct_alice, direct_bob
+    direct_vm, direct_deploy, direct_alice, direct_bob, addr
 ):
     contract = direct_deploy("contracts/football_bets.py")
 
@@ -58,15 +58,15 @@ def test_different_users_can_bet_same_match(
 
     bets = contract.get_bets()
     assert len(bets) == 2
-    assert bets[direct_alice.as_hex]["2024-06-20_spain_italy"].predicted_winner == "1"
-    assert bets[direct_bob.as_hex]["2024-06-20_spain_italy"].predicted_winner == "2"
+    assert bets[addr.alice]["2024-06-20_spain_italy"].predicted_winner == "1"
+    assert bets[addr.bob]["2024-06-20_spain_italy"].predicted_winner == "2"
 
 
-def test_bet_id_is_lowercase(direct_vm, direct_deploy, direct_alice):
+def test_bet_id_is_lowercase(direct_vm, direct_deploy, direct_alice, addr):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 
     bets = contract.get_bets()
-    assert "2024-06-20_spain_italy" in bets[direct_alice.as_hex]
+    assert "2024-06-20_spain_italy" in bets[addr.alice]
