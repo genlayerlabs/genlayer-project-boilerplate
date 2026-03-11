@@ -2,6 +2,8 @@
 
 import json
 
+from tests.direct.conftest import to_hex
+
 
 def test_empty_bets(direct_deploy):
     contract = direct_deploy("contracts/football_bets.py")
@@ -13,14 +15,16 @@ def test_empty_points(direct_deploy):
     assert contract.get_points() == {}
 
 
-def test_get_player_points_default_zero(direct_deploy, addr):
+def test_get_player_points_default_zero(direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
-    assert contract.get_player_points(addr.alice) == 0
+    alice = to_hex(direct_alice)
+    assert contract.get_player_points(alice) == 0
 
 
-def test_points_accumulate(direct_vm, direct_deploy, direct_alice, addr):
+def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
+    alice = to_hex(direct_alice)
 
     # Create and resolve two winning bets
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
@@ -49,7 +53,7 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice, addr):
     )
     contract.resolve_bet("2024-06-20_denmark_england")
 
-    assert contract.get_player_points(addr.alice) == 2
+    assert contract.get_player_points(alice) == 2
 
     points = contract.get_points()
-    assert points[addr.alice] == 2
+    assert points[alice] == 2

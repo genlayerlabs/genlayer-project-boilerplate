@@ -2,6 +2,8 @@
 
 import json
 
+from tests.direct.conftest import to_hex
+
 
 def _setup_match_mocks(vm, score, winner):
     """Register web and LLM mocks for match resolution."""
@@ -15,9 +17,10 @@ def _setup_match_mocks(vm, score, winner):
     )
 
 
-def test_resolve_winning_bet(direct_vm, direct_deploy, direct_alice, addr):
+def test_resolve_winning_bet(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
+    alice = to_hex(direct_alice)
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
     _setup_match_mocks(direct_vm, "1:0", 1)
@@ -25,32 +28,34 @@ def test_resolve_winning_bet(direct_vm, direct_deploy, direct_alice, addr):
     contract.resolve_bet("2024-06-20_spain_italy")
 
     bets = contract.get_bets()
-    bet = bets[addr.alice]["2024-06-20_spain_italy"]
+    bet = bets[alice]["2024-06-20_spain_italy"]
     assert bet.has_resolved is True
     assert bet.real_winner == "1"
     assert bet.real_score == "1:0"
 
-    assert contract.get_player_points(addr.alice) == 1
+    assert contract.get_player_points(alice) == 1
 
 
-def test_resolve_losing_bet_no_points(direct_vm, direct_deploy, direct_alice, addr):
+def test_resolve_losing_bet_no_points(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
+    alice = to_hex(direct_alice)
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "2")
     _setup_match_mocks(direct_vm, "1:0", 1)
 
     contract.resolve_bet("2024-06-20_spain_italy")
 
-    assert contract.get_player_points(addr.alice) == 0
+    assert contract.get_player_points(alice) == 0
 
     points = contract.get_points()
-    assert addr.alice not in points
+    assert alice not in points
 
 
-def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice, addr):
+def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
+    alice = to_hex(direct_alice)
 
     contract.create_bet("2024-06-20", "Denmark", "England", "0")
     _setup_match_mocks(direct_vm, "1:1", 0)
@@ -58,12 +63,12 @@ def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice, addr):
     contract.resolve_bet("2024-06-20_denmark_england")
 
     bets = contract.get_bets()
-    bet = bets[addr.alice]["2024-06-20_denmark_england"]
+    bet = bets[alice]["2024-06-20_denmark_england"]
     assert bet.has_resolved is True
     assert bet.real_winner == "0"
     assert bet.real_score == "1:1"
 
-    assert contract.get_player_points(addr.alice) == 1
+    assert contract.get_player_points(alice) == 1
 
 
 def test_resolve_already_resolved_fails(direct_vm, direct_deploy, direct_alice):
@@ -91,9 +96,11 @@ def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
 
 
 def test_multiple_users_resolve_independently(
-    direct_vm, direct_deploy, direct_alice, direct_bob, addr
+    direct_vm, direct_deploy, direct_alice, direct_bob
 ):
     contract = direct_deploy("contracts/football_bets.py")
+    alice = to_hex(direct_alice)
+    bob = to_hex(direct_bob)
 
     # Alice bets on team 1
     direct_vm.sender = direct_alice
@@ -108,9 +115,9 @@ def test_multiple_users_resolve_independently(
     # Alice resolves — she wins
     direct_vm.sender = direct_alice
     contract.resolve_bet("2024-06-20_spain_italy")
-    assert contract.get_player_points(addr.alice) == 1
+    assert contract.get_player_points(alice) == 1
 
     # Bob resolves — he loses
     direct_vm.sender = direct_bob
     contract.resolve_bet("2024-06-20_spain_italy")
-    assert contract.get_player_points(addr.bob) == 0
+    assert contract.get_player_points(bob) == 0
