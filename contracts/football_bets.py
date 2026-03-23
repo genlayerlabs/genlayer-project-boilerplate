@@ -58,14 +58,28 @@ This result should be perfectly parsable by a JSON parser without errors.
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
+        """Create a new bet for the caller on a scheduled football match.
+
+        Args:
+            game_date: Match date in `YYYY-MM-DD` format.
+            team1: Name of the first team.
+            team2: Name of the second team.
+            predicted_winner: Winner code where `"1"` is `team1`, `"2"` is
+                `team2`, and `"0"` is a draw.
+
+        Raises:
+            Exception: If the team names are invalid, the prediction code is
+                invalid, or the same bet already exists for the caller.
+        """
         if team1 == team2:
-        raise Exception("Teams cannot be the same")
+            raise Exception("Teams cannot be the same")
 
-    if not team1 or not team2:
-        raise Exception("Team names cannot be empty")
+        if not team1 or not team2:
+            raise Exception("Team names cannot be empty")
 
-    if predicted_winner not in [team1, team2, "draw"]:
-        raise Exception("Invalid prediction")
+        if predicted_winner not in ["1", "2", "0"]:
+            raise Exception('Invalid prediction, use "1", "2", or "0"')
+
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
@@ -96,6 +110,15 @@ This result should be perfectly parsable by a JSON parser without errors.
 
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
+        """Resolve an existing bet for the caller using the configured result URL.
+
+        Args:
+            bet_id: Unique identifier of the bet to resolve.
+
+        Raises:
+            Exception: If the bet is already resolved or the match has not
+                finished yet.
+        """
         if self.bets[gl.message.sender_address][bet_id].has_resolved:
             raise Exception("Bet already resolved")
 
@@ -116,12 +139,15 @@ This result should be perfectly parsable by a JSON parser without errors.
 
     @gl.public.view
     def get_bets(self) -> dict:
+        """Return all bets keyed by player address."""
         return {k.as_hex: v for k, v in self.bets.items()}
 
     @gl.public.view
     def get_points(self) -> dict:
+        """Return the points table keyed by player address."""
         return {k.as_hex: v for k, v in self.points.items()}
 
     @gl.public.view
     def get_player_points(self, player_address: str) -> int:
+        """Return the current points total for a single player address."""
         return self.points.get(Address(player_address), 0)
