@@ -58,6 +58,14 @@ This result should be perfectly parsable by a JSON parser without errors.
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
+        if team1 == team2:
+        raise Exception("Teams cannot be the same")
+
+    if not team1 or not team2:
+        raise Exception("Team names cannot be empty")
+
+    if predicted_winner not in [team1, team2, "draw"]:
+        raise Exception("Invalid prediction")
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
