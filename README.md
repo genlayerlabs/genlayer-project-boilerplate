@@ -1,108 +1,99 @@
-# Sample GenLayer project
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/license/mit/)
-[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/8Jm4v89VAu)
-[![Telegram](https://img.shields.io/badge/Telegram--T.svg?style=social&logo=telegram)](https://t.me/genlayer)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/yeagerai.svg?style=social&label=Follow%20%40GenLayer)](https://x.com/GenLayer)
-[![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
+# Signal Quality Oracle — GenLayer Bradbury Hackathon
 
-## 👀 About
-This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
+> AI-powered news signal quality scoring. Only possible on GenLayer.
 
-## 📦 What's included
-- Basic requirements to deploy and test your intelligent contracts locally
-- Configuration file template
-<!-- - Test functions to write complete end-to-end tests -->
-- An example of an intelligent contract (Football Bets)
-- Example end-to-end tests for the contract provided
-- A production-ready Next.js 15 frontend with TypeScript, TanStack Query, and Radix UI
+## What It Does
 
-## 🛠️ Requirements
-- A running GenLayer Studio (Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or work with the hosted version of [GenLayer Studio](https://studio.genlayer.com/)). If you are working locally, this repository code does not need to be located in the same directory as the Genlayer Studio.
-- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed. To install or update the GenLayer CLI run `npm install -g genlayer`
+The Signal Quality Oracle is an intelligent contract that **autonomously evaluates news signals** against editorial standards using AI. It leverages GenLayer's unique capabilities — LLM access and web rendering — to do something no other blockchain can:
 
-## 🚀 Steps to run this example
+1. **Score signal quality** (0-100) using LLM analysis
+2. **Verify claims against source material** by reading web URLs
+3. **Track correspondent reputation** on-chain
+4. **Enforce editorial standards** per beat category
 
-### 1. Deploy the contract
-   Deploy the contract from `/contracts/football_bets.py` using the GenLayer CLI:
-   1. Choose the network that you want to use (studionet, localnet, or tesnet-*): `genlayer network`
-   2. Execute the deploy command `genlayer deploy`. This command is going to execute the deploy script located in `/deploy/deployScript.ts`
+## Why GenLayer?
 
-### 2. Setup the frontend environment
-  1. All the content of the dApp is located in the `/frontend` folder.
-  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_GENLAYER_RPC_URL value is the backend of the hosted GenLayer Studio.
-  3. Add the deployed contract address to the `/frontend/.env` under the variable `NEXT_PUBLIC_CONTRACT_ADDRESS`
+This contract is **impossible on any other blockchain** because it requires:
+- `gl.nondet.exec_prompt()` — Running LLM inference on-chain
+- `gl.nondet.web.render()` — Fetching and reading web content
+- `gl.eq_principle.strict_eq()` — Consensus validation of non-deterministic outputs
 
-### 4. Run the frontend Next.js app
-   Execute the following commands in your terminal:
+Traditional smart contracts can't read the internet or think. GenLayer contracts can.
 
-   **Using bun:**
-   ```shell
-   cd frontend
-   bun install
-   bun dev
-   ```
+## Architecture
 
-   **Using npm:**
-   ```shell
-   cd frontend
-   npm install
-   npm run dev
-   ```
+```
+contracts/
+  signal_oracle.py     # Main intelligent contract
+deploy/
+  deployScript.ts      # Deployment script
+frontend/              # Next.js web interface
+test/                  # Integration tests
+```
 
-   The terminal should display a link to access your frontend app (usually at <http://localhost:3000/>).
-   For more information on the code see [GenLayerJS](https://github.com/yeagerai/genlayer-js).
-   
-### 5. Test contracts
-1. Install the Python packages listed in the `requirements.txt` file in a virtual environment.
-2. Make sure your GenLayer Studio is running. Then execute the following command in your terminal:
-   ```shell
-   gltest
-   ```
+## Key Features
 
-## ⚽ How the Football Bets Contract Works
+### 1. Signal Submission with AI Scoring
+```python
+@gl.public.write
+def submit_signal(headline, body, beat) -> dict
+```
+Submits a signal for evaluation. The LLM analyzes it against editorial standards and returns a score, approval status, and actionable feedback.
 
-The Football Bets contract allows users to create bets for football matches, resolve those bets, and earn points for correct bets. Here's a breakdown of its main functionalities:
+### 2. Web Verification (GenLayer-Exclusive)
+```python
+@gl.public.write
+def verify_web_signal(headline, source_url) -> dict
+```
+Reads the source URL directly and verifies whether the headline's claims are supported by the actual content. **This is the killer feature** — on-chain fact-checking.
 
-1. Creating Bets:
-   - Users can create a bet for a specific football match by providing the game date, team names, and their predicted winner.
-   - The contract checks if the game has already finished and if the user has already made a bet for this match.
+### 3. Reputation Tracking
+```python
+@gl.public.view
+def get_submitter_reputation(addr) -> int
+```
+Tracks how many signals each correspondent has gotten approved, creating an on-chain reputation system.
 
-2. Resolving Bets:
-   - After a match has concluded, users can resolve their bets.
-   - The contract fetches the actual match result from a specified URL.
-   - If the Bet was correct, the user earns a point.
+### 4. Configurable Editorial Standards
+```python
+@gl.public.write
+def update_standard(beat, ...) -> None
+```
+Each beat can have different editorial standards (length requirements, banned topics, approval thresholds).
 
-3. Querying Data:
-   - Users can retrieve all bets.
-   - The contract also allows querying of points, either for all players or for a specific player.
+## Editorial Standards
 
-4. Getting Points:
-   - Points are awarded for correct bets.
-   - Users can check their total points or the points of any player.
+Default configuration:
+- Headlines: 20-120 characters
+- Body: 150-400 words
+- Minimum 2 data points/numbers required
+- Banned topics: bitcoin price, sentiment index, external hacks, ETF flows
+- Approval threshold: 70/100 score
 
-## 🧪 Tests
+## Use Cases
 
-This project includes integration tests that interact with the contract deployed in the Studio. These tests cover the main functionalities of the Football Bets contract:
+- **News organizations**: Automated quality control for contributor submissions
+- **DAOs**: On-chain content curation with AI verification
+- **Bounty platforms**: Verify that bounty submissions meet requirements
+- **Academic publishing**: Pre-screen papers against editorial standards
 
-1. Creating a bet
-2. Resolving a bet
-3. Querying bets for a player
-4. Querying points for a player
+## Running Locally
 
-The tests simulate real-world interactions with the contract, ensuring that it behaves correctly under various scenarios. They use the GenLayer Studio to deploy and interact with the contract, providing a comprehensive check of the contract's functionality in a controlled environment.
+```bash
+# Start GenLayer simulator
+genlayer up
 
-To run the tests, use the `gltest` command as mentioned in the "Steps to run this example" section.
+# Deploy contract
+npm run deploy
 
+# Run frontend
+cd frontend && npm run dev
+```
 
-## 💬 Community
-Connect with the GenLayer community to discuss, collaborate, and share insights:
-- **[Discord Channel](https://discord.gg/8Jm4v89VAu)**: Our primary hub for discussions, support, and announcements.
-- **[Telegram Group](https://t.me/genlayer)**: For more informal chats and quick updates.
+## Hackathon Track
 
-Your continuous feedback drives better product development. Please engage with us regularly to test, discuss, and improve GenLayer.
+**Builders Track** — Deployed intelligent contract demonstrating GenLayer's core differentiator: AI-native smart contracts that can read, think, and judge.
 
-## 📖 Documentation
-For detailed information on how to use GenLayerJS SDK, please refer to our [documentation](https://docs.genlayer.com/).
+## Team
 
-## 📜 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Built for the GenLayer Bradbury Hackathon (March 20 - April 10, 2026)
