@@ -40,14 +40,12 @@ Web content:
 
 Respond in JSON:
 {{
-    "score": str, // e.g., "1:2" or "-" if unresolved
-    "winner": int // 0 for draw, -1 if unresolved
+    "score": str,
+    "winner": int
 }}
-It is mandatory that you respond only using the JSON format above,
-nothing else. Don't include any other words or characters,
-your output must be only JSON without any formatting prefix or suffix.
-This result should be perfectly parsable by a JSON parser without errors.
-        """
+Only return valid JSON without any extra text.
+            """
+
             result = gl.nondet.exec_prompt(task, response_format="json")
             return json.dumps(result, sort_keys=True)
 
@@ -61,16 +59,11 @@ This result should be perfectly parsable by a JSON parser without errors.
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
-        # commented to allow to test matches in the past.
-        # match_status = await self._check_match(match_resolution_url, team1, team2)
 
-        # if int(match_status["winner"]) > -1:
-        #    raise Exception("Game already finished")
-
-        sender_address = gl.message.sender_address
-
+        sender = gl.message.sender_address
         bet_id = f"{game_date}_{team1}_{team2}".lower()
-        if sender_address in self.bets and bet_id in self.bets[sender_address]:
+
+        if sender in self.bets and bet_id in self.bets[sender]:
             raise Exception("Bet already created")
 
         bet = Bet(
@@ -84,15 +77,25 @@ This result should be perfectly parsable by a JSON parser without errors.
             real_winner="",
             real_score="",
         )
-        self.bets.get_or_insert_default(sender_address)[bet_id] = bet
+
+        self.bets.get_or_insert_default(sender)[bet_id] = bet
 
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
-        if self.bets[gl.message.sender_address][bet_id].has_resolved:
+        sender = gl.message.sender_address
+
+        # ✅ Explicit ownership & existence validation
+        if sender not in self.bets or bet_id not in self.bets[sender]:
+            raise Exception("Bet not found or not owned by caller")
+
+        bet = self.bets[sender][bet_id]
+
+        if bet.has_resolved:
             raise Exception("Bet already resolved")
 
-        bet = self.bets[gl.message.sender_address][bet_id]
-        bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
+        bet_status = self._check_match(
+            bet.resolution_url, bet.team1, bet.team2
+        )
 
         if int(bet_status["winner"]) < 0:
             raise Exception("Game not finished")
@@ -102,9 +105,9 @@ This result should be perfectly parsable by a JSON parser without errors.
         bet.real_score = bet_status["score"]
 
         if bet.real_winner == bet.predicted_winner:
-            if gl.message.sender_address not in self.points:
-                self.points[gl.message.sender_address] = 0
-            self.points[gl.message.sender_address] += 1
+            if sender not in self.points:
+                self.points[sender] = 0
+            self.points[sender] += 1
 
     @gl.public.view
     def get_bets(self) -> dict:
