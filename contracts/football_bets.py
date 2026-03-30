@@ -26,9 +26,17 @@ class FootballBets(gl.Contract):
     def __init__(self):
         pass
 
-    def _check_match(self, resolution_url: str, team1: str, team2: str) -> dict:
+    def _check_match(
+        self,
+        resolution_url: str,
+        team1: str,
+        team2: str
+    ) -> dict:
         def get_match_result() -> str:
-            web_data = gl.nondet.web.render(resolution_url, mode="text")
+            web_data = gl.nondet.web.render(
+                resolution_url,
+                mode="text"
+            )
 
             task = f"""
 Extract the match result for:
@@ -44,20 +52,30 @@ Respond in JSON:
     "winner": int
 }}
 Only return valid JSON without any extra text.
-            """
+"""
 
-            result = gl.nondet.exec_prompt(task, response_format="json")
+            result = gl.nondet.exec_prompt(
+                task,
+                response_format="json"
+            )
             return json.dumps(result, sort_keys=True)
 
-        result_json = json.loads(gl.eq_principle.strict_eq(get_match_result))
+        result_json = json.loads(
+            gl.eq_principle.strict_eq(get_match_result)
+        )
         return result_json
 
     @gl.public.write
     def create_bet(
-        self, game_date: str, team1: str, team2: str, predicted_winner: str
+        self,
+        game_date: str,
+        team1: str,
+        team2: str,
+        predicted_winner: str
     ) -> None:
         match_resolution_url = (
-            "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
+            "https://www.bbc.com/sport/football/scores-fixtures/"
+            + game_date
         )
 
         sender = gl.message.sender_address
@@ -75,7 +93,7 @@ Only return valid JSON without any extra text.
             team2=team2,
             predicted_winner=predicted_winner,
             real_winner="",
-            real_score="",
+            real_score=""
         )
 
         self.bets.get_or_insert_default(sender)[bet_id] = bet
@@ -84,7 +102,7 @@ Only return valid JSON without any extra text.
     def resolve_bet(self, bet_id: str) -> None:
         sender = gl.message.sender_address
 
-        # ✅ Explicit ownership & existence validation
+        # Ensure caller owns the bet and the bet exists
         if sender not in self.bets or bet_id not in self.bets[sender]:
             raise Exception("Bet not found or not owned by caller")
 
@@ -94,7 +112,9 @@ Only return valid JSON without any extra text.
             raise Exception("Bet already resolved")
 
         bet_status = self._check_match(
-            bet.resolution_url, bet.team1, bet.team2
+            bet.resolution_url,
+            bet.team1,
+            bet.team2
         )
 
         if int(bet_status["winner"]) < 0:
@@ -107,16 +127,26 @@ Only return valid JSON without any extra text.
         if bet.real_winner == bet.predicted_winner:
             if sender not in self.points:
                 self.points[sender] = 0
+
             self.points[sender] += 1
 
     @gl.public.view
     def get_bets(self) -> dict:
-        return {k.as_hex: v for k, v in self.bets.items()}
+        return {
+            k.as_hex: v
+            for k, v in self.bets.items()
+        }
 
     @gl.public.view
     def get_points(self) -> dict:
-        return {k.as_hex: v for k, v in self.points.items()}
+        return {
+            k.as_hex: v
+            for k, v in self.points.items()
+        }
 
     @gl.public.view
     def get_player_points(self, player_address: str) -> int:
-        return self.points.get(Address(player_address), 0)
+        return self.points.get(
+            Address(player_address),
+            0
+        )
