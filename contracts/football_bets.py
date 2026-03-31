@@ -2,8 +2,57 @@
 
 import json
 from dataclasses import dataclass
-from genlayer import *
+try:
+    from genlayer import *
+except ImportError:
+    # 🔥 Fallback for local pytest (NO blockchain runtime)
 
+    def allow_storage(cls):
+        return cls
+
+    class u256(int):
+        pass
+
+    class Address(str):
+        def as_hex(self):
+            return self
+
+    class TreeMap(dict):
+        def get_or_insert_default(self, key):
+            if key not in self:
+                self[key] = {}
+            return self[key]
+
+    class gl:
+        class Contract:
+            pass
+
+        class message:
+            sender_address = None
+
+        class public:
+            @staticmethod
+            def write(fn):
+                return fn
+
+            @staticmethod
+            def view(fn):
+                return fn
+
+        class nondet:
+            class web:
+                @staticmethod
+                def render(*args, **kwargs):
+                    return ""
+
+            @staticmethod
+            def exec_prompt(*args, **kwargs):
+                return {}
+
+        class eq_principle:
+            @staticmethod
+            def strict_eq(fn):
+                return fn()
 
 @allow_storage
 @dataclass
@@ -24,7 +73,8 @@ class FootballBets(gl.Contract):
     points: TreeMap[Address, u256]
 
     def __init__(self):
-        pass
+        self.bets = TreeMap()
+        self.points = TreeMap()
 
     def _check_match(
         self,
@@ -60,10 +110,35 @@ Only return valid JSON without any extra text.
             )
             return json.dumps(result, sort_keys=True)
 
-        result_json = json.loads(
-            gl.eq_principle.strict_eq(get_match_result)
-        )
-        return result_json
+        # Deterministic execution
+        raw = gl.eq_principle.strict_eq(get_match_result)
+
+        try:
+            result_json = json.loads(raw)
+        except Exception:
+            raise Exception("Invalid JSON response from match resolver")
+
+        # ✅ Schema validation
+        if not isinstance(result_json, dict):
+            raise Exception("Invalid match result format")
+
+        if "winner" not in result_json or "score" not in result_json:
+            raise Exception("Missing required fields in match result")
+
+        # ✅ Type validation
+        try:
+            winner = int(result_json["winner"])
+        except (ValueError, TypeError):
+            raise Exception("Invalid winner value")
+
+        score = result_json["score"]
+        if not isinstance(score, str):
+            raise Exception("Invalid score value")
+
+        return {
+            "winner": winner,
+            "score": score
+        }
 
     @gl.public.write
     def create_bet(
@@ -102,7 +177,7 @@ Only return valid JSON without any extra text.
     def resolve_bet(self, bet_id: str) -> None:
         sender = gl.message.sender_address
 
-        # Ensure caller owns the bet and the bet exists
+        # ✅ Ownership + existence validation
         if sender not in self.bets or bet_id not in self.bets[sender]:
             raise Exception("Bet not found or not owned by caller")
 
@@ -117,7 +192,8 @@ Only return valid JSON without any extra text.
             bet.team2
         )
 
-        if int(bet_status["winner"]) < 0:
+        # ✅ No re-casting needed (already validated)
+        if bet_status["winner"] < 0:
             raise Exception("Game not finished")
 
         bet.has_resolved = True

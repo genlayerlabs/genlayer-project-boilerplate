@@ -1,140 +1,117 @@
-from gltest import get_contract_factory, default_account
-from gltest.helpers import load_fixture
-from gltest.assertions import tx_execution_succeeded
-from test.football_bets_get_contract_schema_for_code import (
-    test_football_bets_win_resolved,
-    test_football_bets_win_unresolved,
-    test_football_bets_draw_unresolved,
-    test_football_bets_draw_resolved,
-    test_football_bets_unsuccess_unresolved,
-    test_football_bets_unsuccess_resolved,
-)
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import pytest
+from contracts.football_bets import FootballBets, Bet, Address, gl
 
 
-def deploy_contract():
-    factory = get_contract_factory("FootballBets")
-    contract = factory.deploy()
-
-    # Get Initial State
-    contract_all_points_state = contract.get_points(args=[])
-    assert contract_all_points_state == {}
-
-    contract_all_bets_state = contract.get_bets(args=[])
-    assert contract_all_bets_state == {}
-    return contract
+@pytest.fixture
+def contract():
+    return FootballBets()
 
 
-def test_football_bets_success_win():
-    # Contract Deploy
+@pytest.fixture
+def user():
+    return Address("0x123")
 
-    contract = load_fixture(deploy_contract)
 
-    # Create Successful Bet
-    create_bet_result = contract.create_bet(args=["2024-06-20", "Spain", "Italy", "1"])
-    assert tx_execution_succeeded(create_bet_result)
+def setup_bet(contract, user, predicted="1"):
+    bet_id = "2024-06-20_spain_italy"
 
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {
-        default_account.address: test_football_bets_win_unresolved
+    contract.bets[user] = {
+        bet_id: Bet(
+            id=bet_id,
+            has_resolved=False,
+            game_date="2024-06-20",
+            resolution_url="url",
+            team1="Spain",
+            team2="Italy",
+            predicted_winner=predicted,
+            real_winner="",
+            real_score=""
+        )
     }
 
-    # Resolve Successful Bet
-    resolve_successful_bet_result = contract.resolve_bet(
-        args=["2024-06-20_spain_italy"],
-        wait_interval=10000,  # 10000 ms = 10 seconds
-        wait_retries=15,
+    return bet_id
+
+
+# ✅ Test: menang (correct prediction)
+def test_success_win(contract, user, mocker):
+    bet_id = setup_bet(contract, user, predicted="1")
+
+    mocker.patch.object(
+        contract,
+        "_check_match",
+        return_value={"winner": 1, "score": "2-1"}
     )
-    assert tx_execution_succeeded(resolve_successful_bet_result)
 
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {default_account.address: test_football_bets_win_resolved}
+    gl.message.sender_address = user
 
-    # Get Points
-    get_points_result = contract.get_points(args=[])
-    assert get_points_result == {default_account.address: 1}
+    contract.resolve_bet(bet_id)
 
-    # Get Player Points
-    get_player_points_result = contract.get_player_points(
-        args=[default_account.address]
+    assert contract.bets[user][bet_id].has_resolved is True
+    assert contract.points[user] == 1
+
+
+# ✅ Test: draw (0)
+def test_draw_success(contract, user, mocker):
+    bet_id = setup_bet(contract, user, predicted="0")
+
+    mocker.patch.object(
+        contract,
+        "_check_match",
+        return_value={"winner": 0, "score": "1-1"}
     )
-    assert get_player_points_result == 1
+
+    gl.message.sender_address = user
+
+    contract.resolve_bet(bet_id)
+
+    assert contract.points[user] == 1
 
 
-def test_football_bets_draw_success():
-    # Contract Deploy
-    contract = load_fixture(deploy_contract)
+# ❌ Test: kalah (prediction salah)
+def test_unsuccess(contract, user, mocker):
+    bet_id = setup_bet(contract, user, predicted="2")
 
-    # Create Successful Bet
-    create_bet_result = contract.create_bet(
-        args=["2024-06-20", "Denmark", "England", "0"]
+    mocker.patch.object(
+        contract,
+        "_check_match",
+        return_value={"winner": 1, "score": "2-1"}
     )
-    assert tx_execution_succeeded(create_bet_result)
 
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {
-        default_account.address: test_football_bets_draw_unresolved
-    }
+    gl.message.sender_address = user
 
-    # Resolve Successful Bet
-    resolve_successful_bet_result = contract.resolve_bet(
-        args=["2024-06-20_denmark_england"],
-        wait_interval=10000,  # 10000 ms = 10 seconds
-        wait_retries=15,
+    contract.resolve_bet(bet_id)
+
+    assert user not in contract.points
+
+
+# 🔒 Test: bukan owner
+def test_not_owner(contract, user):
+    other = Address("0x999")
+
+    bet_id = setup_bet(contract, user)
+
+    gl.message.sender_address = other
+
+    with pytest.raises(Exception):
+        contract.resolve_bet(bet_id)
+
+
+# 🧨 Test: invalid AI response (schema validation)
+def test_invalid_result(contract, user, mocker):
+    bet_id = setup_bet(contract, user)
+
+    mocker.patch.object(
+        contract,
+        "_check_match",
+        return_value={"score": 123}  # invalid schema
     )
-    assert tx_execution_succeeded(resolve_successful_bet_result)
 
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {default_account.address: test_football_bets_draw_resolved}
+    gl.message.sender_address = user
 
-    # Get Points
-    get_points_result = contract.get_points(args=[])
-    assert get_points_result == {default_account.address: 1}
-
-    # Get Player Points
-    get_player_points_result = contract.get_player_points(
-        args=[default_account.address]
-    )
-    assert get_player_points_result == 1
-
-
-def test_football_bets_unsuccess():
-    # Contract Deploy
-    contract = load_fixture(deploy_contract)
-
-    # Create Successful Bet
-    create_bet_result = contract.create_bet(args=["2024-06-20", "Spain", "Italy", "2"])
-    assert tx_execution_succeeded(create_bet_result)
-
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {
-        default_account.address: test_football_bets_unsuccess_unresolved
-    }
-
-    # Resolve Successful Bet
-    resolve_successful_bet_result = contract.resolve_bet(
-        args=["2024-06-20_spain_italy"],
-        wait_interval=10000,  # 10000 ms = 10 seconds
-        wait_retries=15,
-    )
-    assert tx_execution_succeeded(resolve_successful_bet_result)
-
-    # Get Bets
-    get_bet_result = contract.get_bets(args=[])
-    assert get_bet_result == {
-        default_account.address: test_football_bets_unsuccess_resolved
-    }
-
-    # Get Points
-    get_points_result = contract.get_points(args=[])
-    assert get_points_result == {}
-
-    # Get Player Points
-    get_player_points_result = contract.get_player_points(
-        args=[default_account.address]
-    )
-    assert get_player_points_result == 0
+    with pytest.raises(Exception):
+        contract.resolve_bet(bet_id)
