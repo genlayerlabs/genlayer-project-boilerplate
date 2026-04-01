@@ -153,10 +153,15 @@ Only return valid JSON.
         if "winner" not in result_json or "score" not in result_json:
             raise Exception("Missing required fields in match result")
 
+        # ✅ FIX 1: proper exception handling
         try:
             winner = int(result_json["winner"])
         except (KeyError, ValueError, TypeError):
             raise Exception("Invalid winner value") from None
+
+        # ✅ FIX 2: VALIDATE ENUM (MAJOR ISSUE)
+        if winner not in [-1, 0, 1, 2]:
+            raise Exception("Unsupported winner value")
 
         score = result_json["score"]
         if not isinstance(score, str):
