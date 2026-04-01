@@ -155,8 +155,8 @@ Only return valid JSON.
 
         try:
             winner = int(result_json["winner"])
-        except:
-            raise Exception("Invalid winner value")
+        except (KeyError, ValueError, TypeError):
+            raise Exception("Invalid winner value") from None
 
         score = result_json["score"]
         if not isinstance(score, str):
