@@ -144,7 +144,7 @@ Only return valid JSON.
 
         try:
             result_json = json.loads(raw)
-        except Exception:
+        except json.JSONDecodeError:
             raise Exception("Invalid JSON response from match resolver")
 
         if not isinstance(result_json, dict):
