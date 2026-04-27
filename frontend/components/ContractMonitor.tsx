@@ -1,3 +1,19 @@
+/**
+ * @component ContractMonitor
+ * @description 
+ * A production-ready dashboard component designed for the GenLayer boilerplate.
+ * * KEY FEATURES:
+ * 1. Real-time State Tracking: Automatically polls the GenLayer Intelligent Contract 
+ * every 5 seconds to fetch updated player points.
+ * 2. Visual Status Indicator: Includes a pulsing LED-style status light that 
+ * distinguishes between "Loading/Connecting" (Blue) and "Live" (Green).
+ * 3. Robust Error Handling: Displays human-readable error messages if the 
+ * RPC connection fails or the contract address is invalid.
+ * * USAGE:
+ * Place this component in any Next.js Page. Requires 'contractAddress' and 
+ * 'playerAddress' as props.
+ */
+
 'use client';
 import { useContractState } from '../hooks/useContractState';
 
