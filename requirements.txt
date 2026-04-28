@@ -1,5 +1,6 @@
-requests==2.31.0
-python-dotenv==1.0.1
-eth-account==0.13.3
-eth-utils==5.0.0
-genlayer-test==0.1.1
+genlayer-test>=0.25.0
+genvm-linter>=0.7.0
+requests>=2.31.0
+python-dotenv>=1.0.1
+eth-account>=0.13.3
+eth-utils>=5.0.0

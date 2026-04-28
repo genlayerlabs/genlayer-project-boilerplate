@@ -1,3 +1,5 @@
+"""Expected contract state fixtures for integration tests."""
+
 football_bets_contract_schema = {
     "id": 1,
     "jsonrpc": "2.0",
@@ -39,21 +41,21 @@ football_bets_contract_schema = {
 }
 
 
-test_football_bets_win_unresolved = {
+football_bets_win_unresolved = {
     "2024-06-20_spain_italy": {
         "game_date": "2024-06-20",
         "has_resolved": False,
         "id": "2024-06-20_spain_italy",
         "predicted_winner": "1",
-        "real_score": '',
-        "real_winner": '',
+        "real_score": "",
+        "real_winner": "",
         "resolution_url": "https://www.bbc.com/sport/football/scores-fixtures/2024-06-20",
         "team1": "Spain",
         "team2": "Italy",
     }
 }
 
-test_football_bets_win_resolved = {
+football_bets_win_resolved = {
     "2024-06-20_spain_italy": {
         "game_date": "2024-06-20",
         "has_resolved": True,
@@ -67,21 +69,21 @@ test_football_bets_win_resolved = {
     }
 }
 
-test_football_bets_draw_unresolved = {
+football_bets_draw_unresolved = {
     "2024-06-20_denmark_england": {
         "game_date": "2024-06-20",
         "has_resolved": False,
         "id": "2024-06-20_denmark_england",
         "predicted_winner": "0",
-        "real_score": '',
-        "real_winner": '',
+        "real_score": "",
+        "real_winner": "",
         "resolution_url": "https://www.bbc.com/sport/football/scores-fixtures/2024-06-20",
         "team1": "Denmark",
         "team2": "England",
     }
 }
 
-test_football_bets_draw_resolved = {
+football_bets_draw_resolved = {
     "2024-06-20_denmark_england": {
         "game_date": "2024-06-20",
         "has_resolved": True,
@@ -95,21 +97,21 @@ test_football_bets_draw_resolved = {
     }
 }
 
-test_football_bets_unsuccess_unresolved = {
+football_bets_unsuccess_unresolved = {
     "2024-06-20_spain_italy": {
         "game_date": "2024-06-20",
         "has_resolved": False,
         "id": "2024-06-20_spain_italy",
         "predicted_winner": "2",
-        "real_score": '',
-        "real_winner": '',
+        "real_score": "",
+        "real_winner": "",
         "resolution_url": "https://www.bbc.com/sport/football/scores-fixtures/2024-06-20",
         "team1": "Spain",
         "team2": "Italy",
     }
 }
 
-test_football_bets_unsuccess_resolved = {
+football_bets_unsuccess_resolved = {
     "2024-06-20_spain_italy": {
         "game_date": "2024-06-20",
         "has_resolved": True,
