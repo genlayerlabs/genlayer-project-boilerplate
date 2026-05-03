@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { Plus, Loader2, Calendar, Users } from "lucide-react";
 import { useCreateBet } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
-import { success, error } from "@/lib/utils/toast";
+import { error } from "@/lib/utils/toast";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 
 export function CreateBetModal() {
-  const { isConnected, address, isLoading } = useWallet();
+  const { isConnected, address, isLoading, connectWallet } = useWallet();
   const { createBet, isCreating, isSuccess } = useCreateBet();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -67,7 +67,7 @@ export function CreateBetModal() {
     e.preventDefault();
 
     if (!isConnected || !address) {
-      error("Please connect your wallet first");
+      connectWallet();
       return;
     }
 
@@ -79,7 +79,7 @@ export function CreateBetModal() {
       gameDate,
       team1,
       team2,
-      predictedWinner: predictedWinner, // Send "1", "2", or "0" directly
+      predictedWinner: predictedWinner,
     });
   };
 

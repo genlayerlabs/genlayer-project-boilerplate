@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import FootballBets from "../contracts/FootballBets";
 import { getContractAddress, getStudioUrl } from "../genlayer/client";
 import { useWallet } from "../genlayer/wallet";
-import { success, error, configError } from "../utils/toast";
+import { success, error } from "../utils/toast";
 import type { Bet, LeaderboardEntry } from "../contracts/types";
 
 /**
@@ -13,9 +13,6 @@ import type { Bet, LeaderboardEntry } from "../contracts/types";
  *
  * Returns null if contract address is not configured.
  * The contract instance is recreated whenever the wallet address changes.
- * Read-only operations (getBets, getLeaderboard, etc.) work without a connected wallet.
- * Write operations (createBet, resolveBet) require a connected wallet and will fail
- * if the address is null. Defensive validation is added in the mutation hooks.
  */
 export function useFootballBetsContract(): FootballBets | null {
   const { address } = useWallet();
@@ -23,22 +20,10 @@ export function useFootballBetsContract(): FootballBets | null {
   const studioUrl = getStudioUrl();
 
   const contract = useMemo(() => {
-    // Validate contract address is configured
     if (!contractAddress) {
-      configError(
-        "Setup Required",
-        "Contract address not configured. Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file.",
-        {
-          label: "Setup Guide",
-          onClick: () => window.open("/docs/setup", "_blank")
-        }
-      );
-      // Return null to indicate contract is not available
       return null;
     }
 
-    // Contract instance is recreated when address changes to ensure
-    // the genlayer-js client is properly configured with the current account
     return new FootballBets(contractAddress, address, studioUrl);
   }, [contractAddress, address, studioUrl]);
 
