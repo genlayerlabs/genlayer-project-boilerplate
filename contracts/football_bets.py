@@ -40,14 +40,10 @@ Web content:
 
 Respond in JSON:
 {{
-    "score": str, // e.g., "1:2" or "-" if unresolved
-    "winner": int // 0 for draw, -1 if unresolved
+    "score": str,
+    "winner": int
 }}
-It is mandatory that you respond only using the JSON format above,
-nothing else. Don't include any other words or characters,
-your output must be only JSON without any formatting prefix or suffix.
-This result should be perfectly parsable by a JSON parser without errors.
-        """
+"""
             result = gl.nondet.exec_prompt(task, response_format="json")
             return json.dumps(result, sort_keys=True)
 
@@ -58,18 +54,29 @@ This result should be perfectly parsable by a JSON parser without errors.
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
+        """Create a new bet for a football match."""
+
+        # 🔹 Validation
+        team1 = team1.strip()
+        team2 = team2.strip()
+
+        if not team1 or not team2:
+            raise Exception("Team names cannot be empty")
+
+        if team1.lower() == team2.lower():
+            raise Exception("Teams cannot be the same")
+
+        if predicted_winner not in ["1", "2", "0"]:
+            raise Exception('Invalid prediction, use "1", "2", or "0"')
+
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
-        # commented to allow to test matches in the past.
-        # match_status = await self._check_match(match_resolution_url, team1, team2)
-
-        # if int(match_status["winner"]) > -1:
-        #    raise Exception("Game already finished")
 
         sender_address = gl.message.sender_address
 
         bet_id = f"{game_date}_{team1}_{team2}".lower()
+
         if sender_address in self.bets and bet_id in self.bets[sender_address]:
             raise Exception("Bet already created")
 
@@ -84,14 +91,26 @@ This result should be perfectly parsable by a JSON parser without errors.
             real_winner="",
             real_score="",
         )
+
         self.bets.get_or_insert_default(sender_address)[bet_id] = bet
 
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
-        if self.bets[gl.message.sender_address][bet_id].has_resolved:
+        """Resolve a bet by checking the match result.
+
+        Raises:
+            Exception: If the bet does not exist for the caller.
+            Exception: If the bet is already resolved or the match has not
+                finished yet.
+        """
+        sender_address = gl.message.sender_address
+        if sender_address not in self.bets or bet_id not in self.bets[sender_address]:
+            raise Exception("Bet not found")
+
+        if self.bets[sender_address][bet_id].has_resolved:
             raise Exception("Bet already resolved")
 
-        bet = self.bets[gl.message.sender_address][bet_id]
+        bet = self.bets[sender_address][bet_id]
         bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
 
         if int(bet_status["winner"]) < 0:
