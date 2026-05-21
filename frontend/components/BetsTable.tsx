@@ -54,6 +54,9 @@ export function BetsTable() {
               Please set <code className="bg-muted px-1 py-0.5 rounded text-xs">NEXT_PUBLIC_CONTRACT_ADDRESS</code> in your .env file.
             </p>
           </div>
+          <Button asChild variant="gradient">
+            <a href="/setup">Open setup guide</a>
+          </Button>
         </div>
       </div>
     );

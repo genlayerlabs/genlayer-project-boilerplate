@@ -1,4 +1,4 @@
-# Sample GenLayer project
+# GenLayer project boilerplate
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/license/mit/)
 [![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/8Jm4v89VAu)
 [![Telegram](https://img.shields.io/badge/Telegram--T.svg?style=social&logo=telegram)](https://t.me/genlayer)
@@ -6,71 +6,114 @@
 [![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
 
 ## 👀 About
-This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
+This repository is a starter template for building GenLayer applications. It ships with:
+
+- a sample intelligent contract (`FootballBets`)
+- a TypeScript deployment flow
+- fast direct-mode tests for contract logic
+- Studio-backed integration tests
+- a production-ready Next.js frontend wired to `genlayer-js`
 
 ## 📦 What's included
-- Basic requirements to deploy and test your intelligent contracts locally
-- Configuration file template
-<!-- - Test functions to write complete end-to-end tests -->
-- An example of an intelligent contract (Football Bets)
-- Example end-to-end tests for the contract provided
-- A production-ready Next.js 15 frontend with TypeScript, TanStack Query, and Radix UI
+- a GenLayer contract example that uses validator-aware nondeterministic execution
+- direct tests for fast feedback without Studio
+- integration tests for live GenLayer Studio or localnet runs
+- a production-safe frontend build that does not depend on remote fonts
+- CI checks for direct tests, frontend typechecking, and frontend build
+- a setup guide route at `frontend/app/setup/page.tsx`
 
 ## 🛠️ Requirements
 - A running GenLayer Studio (Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or work with the hosted version of [GenLayer Studio](https://studio.genlayer.com/)). If you are working locally, this repository code does not need to be located in the same directory as the Genlayer Studio.
 - [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed. To install or update the GenLayer CLI run `npm install -g genlayer`
+- Python 3.12+
+- Node.js 22+
 
-## 🚀 Steps to run this example
+## 🚀 Quickstart
 
-### 1. Deploy the contract
-   Deploy the contract from `/contracts/football_bets.py` using the GenLayer CLI:
-   1. Choose the network that you want to use (studionet, localnet, or tesnet-*): `genlayer network`
-   2. Execute the deploy command `genlayer deploy`. This command is going to execute the deploy script located in `/deploy/deployScript.ts`
+### 1. Install dependencies
+```bash
+npm install
+python3 -m pip install -r requirements.txt
+```
 
-### 2. Setup the frontend environment
-  1. All the content of the dApp is located in the `/frontend` folder.
-  2. Copy the `.env.example` file in the `frontend` folder and rename it to `.env`, then fill in the values for your configuration. The provided NEXT_PUBLIC_GENLAYER_RPC_URL value is the backend of the hosted GenLayer Studio.
-  3. Add the deployed contract address to the `/frontend/.env` under the variable `NEXT_PUBLIC_CONTRACT_ADDRESS`
+### 2. Configure the frontend
+```bash
+cp frontend/.env.example frontend/.env
+```
 
-### 4. Run the frontend Next.js app
-   Execute the following commands in your terminal:
+Set:
+- `NEXT_PUBLIC_GENLAYER_RPC_URL`
+- `NEXT_PUBLIC_GENLAYER_CHAIN_ID`
+- `NEXT_PUBLIC_GENLAYER_CHAIN_NAME`
+- `NEXT_PUBLIC_GENLAYER_SYMBOL`
+- `NEXT_PUBLIC_CONTRACT_ADDRESS`
 
-   **Using bun:**
-   ```shell
-   cd frontend
-   bun install
-   bun dev
-   ```
+### 3. Validate the starter locally
+```bash
+npm run validate
+```
 
-   **Using npm:**
-   ```shell
-   cd frontend
-   npm install
-   npm run dev
-   ```
+This runs:
+- frontend typechecking
+- direct-mode contract tests
 
-   The terminal should display a link to access your frontend app (usually at <http://localhost:3000/>).
-   For more information on the code see [GenLayerJS](https://github.com/yeagerai/genlayer-js).
-   
-### 5. Test contracts
-1. Install the Python packages listed in the `requirements.txt` file in a virtual environment.
-2. Make sure your GenLayer Studio is running. Then execute the following command in your terminal:
-   ```shell
-   gltest
-   ```
+### 4. Deploy the sample contract
+```bash
+genlayer network
+npm run deploy
+```
 
-## ⚽ How the Football Bets Contract Works
+### 5. Run the frontend
+```bash
+npm run dev
+```
+
+## ⚡ Validation modes
+
+### Direct tests
+Fast tests that do not need GenLayer Studio:
+
+```bash
+npm run test:direct
+```
+
+### Integration tests
+Tests that require Studio or localnet:
+
+```bash
+pytest -m integration -q
+```
+
+If you need explicit network configuration, start from:
+
+```bash
+cp gltest.config.yaml.example gltest.config.yaml
+```
+
+## 🧱 Customize this boilerplate
+
+When turning this into your own GenLayer app, edit these first:
+
+1. `contracts/football_bets.py` for contract logic
+2. `deploy/deployScript.ts` for deployment arguments and contract path
+3. `frontend/lib/contracts/FootballBets.ts` for frontend contract calls
+4. `frontend/lib/hooks/useFootballBets.ts` for frontend data flow
+5. `frontend/.env` for runtime network and contract settings
+
+The sample app remains football-themed, but the repo structure is intended to be copied into other GenLayer products.
+
+## ⚽ How the sample contract works
 
 The Football Bets contract allows users to create bets for football matches, resolve those bets, and earn points for correct bets. Here's a breakdown of its main functionalities:
 
 1. Creating Bets:
-   - Users can create a bet for a specific football match by providing the game date, team names, and their predicted winner.
-   - The contract checks if the game has already finished and if the user has already made a bet for this match.
+   - Users create a bet with a game date, two team names, and a predicted winner.
+   - The contract rejects invalid winner codes, duplicate bets, empty team names, and same-team matchups.
 
 2. Resolving Bets:
-   - After a match has concluded, users can resolve their bets.
-   - The contract fetches the actual match result from a specified URL.
-   - If the Bet was correct, the user earns a point.
+   - The contract fetches match data and asks the LLM for a normalized result.
+   - Consensus is reached through a validator-based nondeterministic flow instead of raw `strict_eq`.
+   - Correct predictions earn one point.
 
 3. Querying Data:
    - Users can retrieve all bets.
@@ -82,17 +125,12 @@ The Football Bets contract allows users to create bets for football matches, res
 
 ## 🧪 Tests
 
-This project includes integration tests that interact with the contract deployed in the Studio. These tests cover the main functionalities of the Football Bets contract:
+This repo uses two layers of tests:
 
-1. Creating a bet
-2. Resolving a bet
-3. Querying bets for a player
-4. Querying points for a player
+1. Direct tests for contract logic and validator capture
+2. Integration tests for live Studio-backed flows
 
-The tests simulate real-world interactions with the contract, ensuring that it behaves correctly under various scenarios. They use the GenLayer Studio to deploy and interact with the contract, providing a comprehensive check of the contract's functionality in a controlled environment.
-
-To run the tests, use the `gltest` command as mentioned in the "Steps to run this example" section.
-
+That split gives contributors a fast feedback loop without losing end-to-end coverage.
 
 ## 💬 Community
 Connect with the GenLayer community to discuss, collaborate, and share insights:

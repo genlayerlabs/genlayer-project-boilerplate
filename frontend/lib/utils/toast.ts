@@ -81,7 +81,7 @@ export const loading = (message: string, options?: ExternalToast) => {
 
 // Promise toast for handling async operations
 export const promise = <T>(
-  promise: Promise<T>,
+  promiseValue: Promise<T>,
   messages: {
     loading: string;
     success: string | ((result: T) => string);
@@ -89,11 +89,10 @@ export const promise = <T>(
   },
   options?: ExternalToast
 ) => {
-  return sonnerToast.promise(promise, {
+  return sonnerToast.promise(promiseValue, {
     loading: messages.loading,
     success: messages.success,
     error: messages.error,
-  }, {
     ...defaultOptions,
     ...options,
   });

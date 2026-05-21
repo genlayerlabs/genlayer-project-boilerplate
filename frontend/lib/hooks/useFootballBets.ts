@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import FootballBets from "../contracts/FootballBets";
 import { getContractAddress, getStudioUrl } from "../genlayer/client";
 import { useWallet } from "../genlayer/wallet";
-import { success, error, configError } from "../utils/toast";
+import { success, error } from "../utils/toast";
 import type { Bet, LeaderboardEntry } from "../contracts/types";
 
 /**
@@ -22,27 +22,13 @@ export function useFootballBetsContract(): FootballBets | null {
   const contractAddress = getContractAddress();
   const studioUrl = getStudioUrl();
 
-  const contract = useMemo(() => {
-    // Validate contract address is configured
+  return useMemo(() => {
     if (!contractAddress) {
-      configError(
-        "Setup Required",
-        "Contract address not configured. Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file.",
-        {
-          label: "Setup Guide",
-          onClick: () => window.open("/docs/setup", "_blank")
-        }
-      );
-      // Return null to indicate contract is not available
       return null;
     }
 
-    // Contract instance is recreated when address changes to ensure
-    // the genlayer-js client is properly configured with the current account
     return new FootballBets(contractAddress, address, studioUrl);
   }, [contractAddress, address, studioUrl]);
-
-  return contract;
 }
 
 /**

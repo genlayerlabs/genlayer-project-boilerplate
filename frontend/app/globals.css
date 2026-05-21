@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
-/* GenLayer Brand Guidelines 2025 - Typography via next/font */
-/* --font-body: Inter (Switzer alternative) */
-/* --font-display: Space Grotesk (Lineca alternative) */
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/Switzer-Light.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/Switzer-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Switzer";
+  src: url("/fonts/Switzer-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
 
 @custom-variant dark (&:is(.dark *));
 
@@ -152,14 +172,12 @@
 
   body {
     @apply text-foreground;
-    /* Use Inter (via --font-body from layout.tsx) */
-    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family: 'Switzer', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    /* Use Space Grotesk for headings (via --font-display from layout.tsx) */
-    font-family: var(--font-display), var(--font-body), sans-serif;
+    font-family: 'Switzer', sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
   }

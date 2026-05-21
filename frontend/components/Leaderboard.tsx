@@ -4,6 +4,7 @@ import { Trophy, Medal, Award, Loader2, AlertCircle } from "lucide-react";
 import { useLeaderboard, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
 import { AddressDisplay } from "./AddressDisplay";
+import { Button } from "./ui/button";
 
 export function Leaderboard() {
   const contract = useFootballBetsContract();
@@ -37,6 +38,9 @@ export function Leaderboard() {
             <p className="text-sm text-muted-foreground">Setup Required</p>
             <p className="text-xs text-muted-foreground">Contract address not configured</p>
           </div>
+          <Button asChild variant="outline" size="sm">
+            <a href="/setup">Open setup guide</a>
+          </Button>
         </div>
       </div>
     );

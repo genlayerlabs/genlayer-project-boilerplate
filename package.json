@@ -8,6 +8,10 @@
     "build": "cd frontend && npm run build",
     "start": "cd frontend && npm run start",
     "lint": "cd frontend && npm run lint",
+    "typecheck": "cd frontend && npm run typecheck",
+    "test:direct": "python3 -m pytest test/test_new_features.py test/direct -q",
+    "test:integration": "python3 -m pytest test/test_footbal_bet.py -q -m integration",
+    "validate": "npm run typecheck && npm run test:direct",
     "deploy": "genlayer deploy"
   },
   "devDependencies": {

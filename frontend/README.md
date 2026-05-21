@@ -23,7 +23,10 @@ cp .env.example .env
 
 3. Configure environment variables:
    - `NEXT_PUBLIC_CONTRACT_ADDRESS` - GenLayer Football Betting contract address
-   - `NEXT_PUBLIC_STUDIO_URL` - GenLayer Studio URL (default: https://studio.genlayer.com/api)
+   - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer Studio or node RPC URL
+   - `NEXT_PUBLIC_GENLAYER_CHAIN_ID` - Chain id shown in MetaMask
+   - `NEXT_PUBLIC_GENLAYER_CHAIN_NAME` - Friendly network name
+   - `NEXT_PUBLIC_GENLAYER_SYMBOL` - Native token symbol
 
 ## Development
 
@@ -53,6 +56,19 @@ npm run build
 npm start
 ```
 
+## Validation
+
+```bash
+npm run typecheck
+```
+
+If you are using the repo root commands, prefer:
+
+```bash
+cd ..
+npm run validate
+```
+
 ## Tech Stack
 
 - **Next.js 15** - React framework with App Router
@@ -65,13 +81,11 @@ npm start
 
 ## Wallet Management
 
-The app uses GenLayer's account system:
-- **Create Account**: Generate a new private key
-- **Import Account**: Import existing private key
-- **Export Account**: Export your private key (secured)
-- **Disconnect**: Clear stored account data
-
-Accounts are stored in browser's localStorage for development convenience.
+The app uses MetaMask for signing and network switching. It can:
+- connect to MetaMask
+- add or switch to the configured GenLayer network
+- switch accounts
+- disconnect local app state without deleting the wallet
 
 ## Features
 

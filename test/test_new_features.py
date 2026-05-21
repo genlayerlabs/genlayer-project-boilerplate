@@ -26,6 +26,8 @@ import base64
 import pytest
 from pathlib import Path
 
+pytestmark = pytest.mark.direct
+
 # Valid 1×1 red PNG (69 bytes) – minimal PIL-parseable image
 _VALID_PNG_B64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAA"
@@ -41,7 +43,7 @@ VALID_PNG = base64.b64decode(_VALID_PNG_B64)
 # Uses run_nondet_unsafe directly so validator does NOT call spawn_sandbox.
 # This is necessary because wasi_mock doesn't implement the Sandbox gl_call.
 _NONDET_CONTRACT = '''\
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 from genlayer import *
 import genlayer.gl.vm as glvm
 
@@ -74,7 +76,7 @@ class NondetContract(gl.Contract):
 '''
 
 _VISUAL_CONTRACT = '''\
-# { "Depends": "py-genlayer:test" }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 from genlayer import *
 
 
@@ -203,38 +205,23 @@ def test_run_validator_respects_leader_result_override(direct_vm, direct_deploy,
     assert result is False, f"Expected False (forced leader_result mismatch), got {result!r}"
 
 
-def test_run_validator_with_football_bets_skips_gracefully(direct_vm, direct_deploy):
+def test_run_validator_with_football_bets_works_in_direct_mode(
+    direct_vm, direct_deploy
+):
     """
-    Document that strict_eq-based contracts (football_bets) DO capture validators,
-    but run_validator() FAILS because strict_eq's validator calls spawn_sandbox,
-    which is unsupported in wasi_mock. This is a known v0.25.0 limitation.
+    The football bets contract now uses run_nondet_unsafe directly, so its
+    validator can be executed in direct mode without the old spawn_sandbox
+    limitation from strict_eq.
     """
     direct_vm.mock_web(r".*bbc.*", {"status": 200, "body": "Spain 3-0 Italy"})
     direct_vm.mock_llm(r".*", '{"score": "3:0", "winner": 1}')
 
     contract = direct_deploy("contracts/football_bets.py")
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+    contract.resolve_bet("2024-06-20_spain_italy")
 
-    try:
-        contract.resolve_bet("2024-06-20_spain_italy")
-    except Exception:
-        pass
-
-    if not direct_vm._captured_validators:
-        pytest.skip("No validator captured")
-
-    # Known to fail with: AssertionError: unknown type 14
-    # (Sandbox gl_call not handled by wasi_mock)
-    with pytest.raises((AssertionError, Exception)) as exc_info:
-        direct_vm.run_validator()
-
-    assert "unknown type 14" in str(exc_info.value) or "sandbox" in str(exc_info.value).lower() or True, (
-        f"Got: {exc_info.value}"
-    )
-    # Mark it as an expected known limitation
-    pytest.xfail(
-        "strict_eq validator uses spawn_sandbox which is unsupported in direct mode (wasi_mock)"
-    )
+    assert direct_vm._captured_validators, "No validator captured"
+    assert direct_vm.run_validator() is True
 
 
 # ─────────────────────────────────────────────────────────────────────────────
