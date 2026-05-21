@@ -81,7 +81,7 @@ npm run test:direct
 Tests that require Studio or localnet:
 
 ```bash
-pytest -m integration -q
+npm run test:integration
 ```
 
 If you need explicit network configuration, start from:

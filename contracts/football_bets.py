@@ -28,7 +28,8 @@ class FootballBets(gl.Contract):
         pass
 
     def _create_bet_id(self, game_date: str, team1: str, team2: str) -> str:
-        return f"{game_date}_{team1}_{team2}".lower()
+        normalized_teams = sorted((team1.lower(), team2.lower()))
+        return f"{game_date.lower()}_{normalized_teams[0]}_{normalized_teams[1]}"
 
     def _normalized_team_name(self, team_name: str) -> str:
         return " ".join(team_name.split())
@@ -36,10 +37,11 @@ class FootballBets(gl.Contract):
     def _validate_create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ):
+        normalized_game_date = game_date.strip()
         normalized_team1 = self._normalized_team_name(team1)
         normalized_team2 = self._normalized_team_name(team2)
 
-        if not game_date.strip():
+        if not normalized_game_date:
             raise Exception("Game date is required")
         if not normalized_team1:
             raise Exception("Team 1 name is required")
@@ -50,7 +52,7 @@ class FootballBets(gl.Contract):
         if predicted_winner not in ("0", "1", "2"):
             raise Exception("Predicted winner must be 0, 1, or 2")
 
-        return normalized_team1, normalized_team2
+        return normalized_game_date, normalized_team1, normalized_team2
 
     def _normalize_match_status(self, raw_result) -> dict:
         if not isinstance(raw_result, dict):
@@ -126,23 +128,25 @@ This result should be perfectly parsable by a JSON parser without errors.
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
-        normalized_team1, normalized_team2 = self._validate_create_bet(
+        normalized_game_date, normalized_team1, normalized_team2 = self._validate_create_bet(
             game_date, team1, team2, predicted_winner
         )
         match_resolution_url = (
-            "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
+            "https://www.bbc.com/sport/football/scores-fixtures/" + normalized_game_date
         )
 
         sender_address = gl.message.sender_address
 
-        bet_id = self._create_bet_id(game_date, normalized_team1, normalized_team2)
+        bet_id = self._create_bet_id(
+            normalized_game_date, normalized_team1, normalized_team2
+        )
         if sender_address in self.bets and bet_id in self.bets[sender_address]:
             raise Exception("Bet already created")
 
         bet = Bet(
             id=bet_id,
             has_resolved=False,
-            game_date=game_date,
+            game_date=normalized_game_date,
             resolution_url=match_resolution_url,
             team1=normalized_team1,
             team2=normalized_team2,

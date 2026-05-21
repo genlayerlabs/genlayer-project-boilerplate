@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Light.woff2") format("woff2");
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-Light.woff2') format('woff2');
   font-style: normal;
   font-weight: 300;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Regular.woff2") format("woff2");
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-Regular.woff2') format('woff2');
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 
 @font-face {
-  font-family: "Switzer";
-  src: url("/fonts/Switzer-Bold.woff2") format("woff2");
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-Bold.woff2') format('woff2');
   font-style: normal;
   font-weight: 700;
   font-display: swap;

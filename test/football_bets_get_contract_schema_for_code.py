@@ -40,10 +40,10 @@ football_bets_contract_schema = {
 
 
 test_football_bets_win_unresolved = {
-    "2024-06-20_spain_italy": {
+    "2024-06-20_italy_spain": {
         "game_date": "2024-06-20",
         "has_resolved": False,
-        "id": "2024-06-20_spain_italy",
+        "id": "2024-06-20_italy_spain",
         "predicted_winner": "1",
         "real_score": '',
         "real_winner": '',
@@ -54,10 +54,10 @@ test_football_bets_win_unresolved = {
 }
 
 test_football_bets_win_resolved = {
-    "2024-06-20_spain_italy": {
+    "2024-06-20_italy_spain": {
         "game_date": "2024-06-20",
         "has_resolved": True,
-        "id": "2024-06-20_spain_italy",
+        "id": "2024-06-20_italy_spain",
         "predicted_winner": "1",
         "real_score": "1:0",
         "real_winner": "1",
@@ -96,10 +96,10 @@ test_football_bets_draw_resolved = {
 }
 
 test_football_bets_unsuccess_unresolved = {
-    "2024-06-20_spain_italy": {
+    "2024-06-20_italy_spain": {
         "game_date": "2024-06-20",
         "has_resolved": False,
-        "id": "2024-06-20_spain_italy",
+        "id": "2024-06-20_italy_spain",
         "predicted_winner": "2",
         "real_score": '',
         "real_winner": '',
@@ -110,10 +110,10 @@ test_football_bets_unsuccess_unresolved = {
 }
 
 test_football_bets_unsuccess_resolved = {
-    "2024-06-20_spain_italy": {
+    "2024-06-20_italy_spain": {
         "game_date": "2024-06-20",
         "has_resolved": True,
-        "id": "2024-06-20_spain_italy",
+        "id": "2024-06-20_italy_spain",
         "predicted_winner": "2",
         "real_score": "1:0",
         "real_winner": "1",

@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run deploy          # Deploy contracts via GenLayer CLI
 npm run dev             # Start frontend dev server (cd frontend && npm run dev)
 npm run build           # Build frontend for production
-gltest                  # Run contract tests (requires GenLayer Studio running)
+npm run test:direct     # Run fast direct-mode contract tests
+npm run test:integration # Run Studio-backed contract tests
 genlayer network        # Select network (studionet/localnet/testnet)
 ```
 
@@ -19,6 +20,7 @@ contracts/          # Python intelligent contracts
 frontend/           # Next.js 15 app (TypeScript, TanStack Query, Radix UI)
 deploy/             # TypeScript deployment scripts
 test/               # Python integration tests (gltest)
+tests/direct/       # Python direct-mode contract tests
 ```
 
 **Frontend stack**: Next.js 15, React 19, TypeScript, Tailwind CSS, TanStack Query, Wagmi/Viem, MetaMask wallet integration.

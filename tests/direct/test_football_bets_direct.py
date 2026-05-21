@@ -21,6 +21,30 @@ def test_create_bet_rejects_duplicate_match(direct_vm, direct_deploy, direct_ali
         contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 
 
+def test_create_bet_rejects_reverse_order_duplicate(
+    direct_vm, direct_deploy, direct_alice
+):
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+
+    with direct_vm.expect_revert("Bet already created"):
+        contract.create_bet("2024-06-20", "Italy", "Spain", "2")
+
+
+def test_create_bet_normalizes_game_date_for_duplicate_detection(
+    direct_vm, direct_deploy, direct_alice
+):
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet(" 2024-06-20 ", "Spain", "Italy", "1")
+
+    with direct_vm.expect_revert("Bet already created"):
+        contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+
+
 def test_create_bet_rejects_same_team(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
@@ -47,7 +71,7 @@ def test_resolve_bet_awards_points_and_captures_validator(
     direct_vm.sender = direct_alice
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
-    contract.resolve_bet("2024-06-20_spain_italy")
+    contract.resolve_bet("2024-06-20_italy_spain")
 
     points = contract.get_points()
     assert len(points) == 1
@@ -63,7 +87,7 @@ def test_resolve_bet_validator_detects_mismatch(direct_vm, direct_deploy, direct
     direct_vm.sender = direct_alice
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
-    contract.resolve_bet("2024-06-20_spain_italy")
+    contract.resolve_bet("2024-06-20_italy_spain")
 
     direct_vm.clear_mocks()
     direct_vm.mock_web(r".*bbc.*", {"status": 200, "body": "Spain 0-1 Italy"})

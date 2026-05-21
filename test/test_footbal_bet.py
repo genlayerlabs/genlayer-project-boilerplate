@@ -53,7 +53,7 @@ def test_football_bets_success_win(default_account):
 
     # Resolve Successful Bet
     resolve_successful_bet_result = contract.resolve_bet(
-        args=["2024-06-20_spain_italy"],
+        args=["2024-06-20_italy_spain"],
         wait_interval=10000,  # 10000 ms = 10 seconds
         wait_retries=15,
     )
@@ -129,7 +129,7 @@ def test_football_bets_unsuccess(default_account):
 
     # Resolve Successful Bet
     resolve_successful_bet_result = contract.resolve_bet(
-        args=["2024-06-20_spain_italy"],
+        args=["2024-06-20_italy_spain"],
         wait_interval=10000,  # 10000 ms = 10 seconds
         wait_retries=15,
     )

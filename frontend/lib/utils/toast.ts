@@ -89,13 +89,18 @@ export const promise = <T>(
   },
   options?: ExternalToast
 ) => {
-  return sonnerToast.promise(promiseValue, {
-    loading: messages.loading,
-    success: messages.success,
-    error: messages.error,
-    ...defaultOptions,
-    ...options,
-  });
+  return sonnerToast.promise(
+    promiseValue,
+    {
+      loading: messages.loading,
+      success: messages.success,
+      error: messages.error,
+    },
+    {
+      ...defaultOptions,
+      ...options,
+    }
+  );
 };
 
 // Configuration error toast (persistent until dismissed)

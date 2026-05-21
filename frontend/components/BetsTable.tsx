@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Loader2, Trophy, Clock, AlertCircle } from "lucide-react";
 import { useBets, useResolveBet, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
 import { useWallet } from "@/lib/genlayer/wallet";
@@ -55,7 +56,7 @@ export function BetsTable() {
             </p>
           </div>
           <Button asChild variant="gradient">
-            <a href="/setup">Open setup guide</a>
+            <Link href="/setup">Open setup guide</Link>
           </Button>
         </div>
       </div>

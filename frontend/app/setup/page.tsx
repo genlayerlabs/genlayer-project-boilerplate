@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 const starterFiles = [
@@ -30,7 +31,7 @@ export default function SetupPage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="gradient">
-              <a href="/">Back to app</a>
+              <Link href="/">Back to app</Link>
             </Button>
             <Button asChild variant="outline">
               <a
@@ -65,7 +66,7 @@ export default function SetupPage() {
                 </li>
               ))}
               <li>
-                Use <code>pytest -m integration -q</code> only when GenLayer
+                Use <code>gltest test/test_footbal_bet.py -q -m integration</code> only when GenLayer
                 Studio or localnet is running.
               </li>
             </ul>

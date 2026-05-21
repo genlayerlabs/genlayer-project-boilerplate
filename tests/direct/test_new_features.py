@@ -4,7 +4,7 @@ Tests for two new GenLayer features:
 2. Visual inputs - web.render(mode='screenshot') + exec_prompt(images=[...])
 
 Run with:
-    python3.12 -m pytest test/test_new_features.py -v
+    gltest tests/direct/test_new_features.py -v
 
 Versions under test:
     genlayer-test 0.25.0  (genlayer-py 0.9.0, genvm SDK v0.2.14 cached)
@@ -218,7 +218,7 @@ def test_run_validator_with_football_bets_works_in_direct_mode(
 
     contract = direct_deploy("contracts/football_bets.py")
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
-    contract.resolve_bet("2024-06-20_spain_italy")
+    contract.resolve_bet("2024-06-20_italy_spain")
 
     assert direct_vm._captured_validators, "No validator captured"
     assert direct_vm.run_validator() is True
@@ -290,7 +290,7 @@ def test_web_render_text_mode_works(direct_vm, direct_deploy):
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 
     try:
-        contract.resolve_bet("2024-06-20_spain_italy")
+        contract.resolve_bet("2024-06-20_italy_spain")
     except Exception:
         pass
 
