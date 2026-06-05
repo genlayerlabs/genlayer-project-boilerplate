@@ -1,0 +1,84 @@
+name: E2E Housekeeper
+
+# ===========================================================================
+# Source-of-truth E2E housekeeper workflow.
+#
+# This file is BOTH:
+#   - The workflow that runs in this repo (genlayer-e2e) for genlayer-
+#     e2e's own cache pool.
+#   - The file synced byte-identically to every consumer repo as
+#     `.github/workflows/e2e-housekeeper.yml` (sync-template.yaml owns
+#     the fan-out).
+#
+# Mirrors the architecture of e2e-pipeline.yml — one file in the source
+# repo, copied verbatim to consumers, no wrapper layer. Adding a new
+# scheduled upkeep step (artifact pruning, runner sweep, …) only needs
+# editing this file; sync-template.yaml opens a PR in each consumer.
+#
+# Cache storage is per-repo, so the eviction step runs in the CALLER's
+# context: `gh cache list` / `gh cache delete` operate on the caller's
+# pool via the inherited GITHUB_TOKEN. The runner's filesystem starts
+# empty, so step 1 checks out genlayer-e2e to access the extracted
+# `evict-stale-caches.sh` script — github.token in a synced consumer
+# context still has cross-org read access on the org's private repos.
+# ===========================================================================
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # daily 06:00 UTC
+  # No inputs: production triggers (schedule today, PR-merged later)
+  # don't pass them, and the script's defaults (24h idle / 200 page
+  # cap) are stable. workflow_dispatch stays as a no-arg "run the
+  # cron now" button — handy in genlayer-e2e while iterating.
+  workflow_dispatch:
+
+# Least-privilege. `evict-stale-caches.sh` invokes `gh cache list`
+# (read) and `gh cache delete` (write) against the caller's cache pool
+# via secrets.GITHUB_TOKEN. The GHA Cache API lives under the actions:
+# permission namespace, so deletion requires actions:write. `contents:
+# read` covers the checkout that fetches this repo's scripts.
+permissions:
+  actions: write
+  contents: read
+
+# Serialize runs so two overlapping firings (manual dispatch + schedule)
+# don't both try to delete the same entry.
+concurrency:
+  group: cache-cleanup
+  cancel-in-progress: false
+
+jobs:
+  evict-stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Pull the extracted script. Explicit `repository:` because — when
+      # this file is synced to a consumer — actions/checkout's default
+      # target is the CONSUMER's repo, not genlayer-e2e. github.token
+      # in the consumer context has org-wide read on private repos so
+      # the clone works without an App token.
+      - name: Checkout genlayer-e2e
+        uses: actions/checkout@v6
+        with:
+          repository: genlayerlabs/genlayer-e2e
+          token: ${{ github.token }}
+
+      - name: Delete idle caches
+        env:
+          # `gh cache delete` consumes GH_TOKEN. github.repository
+          # resolves to the caller's repo (where the cron fires + the
+          # cache pool lives).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: ./taskfiles/housekeeper/scripts/evict-stale-caches.sh --age 24 --limit 200
+
+      # Companion sweep for artifacts (logs, shard outputs, per-component
+      # summaries). Same 24h idle window so the two sweeps stay in sync.
+      # `if: always()` so an early cache-sweep failure doesn't skip the
+      # artifact pass — they're independent.
+      - name: Delete idle artifacts
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: ./taskfiles/housekeeper/scripts/evict-stale-artifacts.sh --age 24 --limit 1000
