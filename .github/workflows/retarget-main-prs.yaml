@@ -1,0 +1,53 @@
+name: Retarget main PRs
+
+# main is a static/default alias of the active dev branch. Contributions should
+# target the active dev branch directly; PRs opened against main are retargeted
+# automatically so required checks and release-train rules run in the right
+# branch context.
+#
+# pull_request_target is used for the write-scoped token. This workflow never
+# checks out or executes PR head code; it reads only trusted base-branch files.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  retarget:
+    if: github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Retarget PR to active dev branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+
+          active_branch="$(tr -d '[:space:]' < support/ci/ACTIVE_DEV_BRANCH)"
+          if [[ -z "${active_branch}" || "${active_branch}" == "main" ]]; then
+            echo "::error::support/ci/ACTIVE_DEV_BRANCH must name a non-main dev branch"
+            exit 1
+          fi
+
+          gh pr edit "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --base "${active_branch}"
+
+          gh pr comment "${PR_NUMBER}" --repo "${GITHUB_REPOSITORY}" --body "$(cat <<EOF
+          This PR targeted \`main\`, which is only the default/static branch.
+
+          I retargeted it to \`${active_branch}\`, the active development branch. Pushes to \`${active_branch}\` automatically fast-forward \`main\`.
+          EOF
+          )"
