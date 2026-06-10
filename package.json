@@ -8,6 +8,7 @@
     "build": "cd frontend && npm run build",
     "start": "cd frontend && npm run start",
     "lint": "cd frontend && npm run lint",
+    "test:fees": "gltest tests/integration --fee-profile frontend/fee-profile.json",
     "deploy": "genlayer deploy"
   },
   "devDependencies": {

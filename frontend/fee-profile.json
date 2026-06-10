@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "network": "studionet",
+  "measuredAt": "2026-06-10T12:00:00Z",
+  "deploy": {
+    "executionBudgetPerRound": "856250",
+    "totalMessageFees": "0"
+  },
+  "methods": {
+    "create_bet": {
+      "executionBudgetPerRound": "412500",
+      "totalMessageFees": "0"
+    },
+    "resolve_bet": {
+      "executionBudgetPerRound": "1093750",
+      "totalMessageFees": "0"
+    }
+  }
+}

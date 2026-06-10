@@ -1,8 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { createTransactionKit, type TransactionKit } from "@genlayer/transaction-kit";
+import {
+  createTransactionKit,
+  type FeeSuggestions,
+  type TransactionKit,
+} from "@genlayer/transaction-kit";
 import { studionet } from "genlayer-js/chains";
+import feeProfile from "@/fee-profile.json";
 import { getEthereumProvider } from "./client";
 
 export function useTransactionKit(address: string | null): TransactionKit | null {
@@ -17,6 +22,7 @@ export function useTransactionKit(address: string | null): TransactionKit | null
       chain: studionet,
       provider,
       account: address as `0x${string}`,
+      suggestions: feeProfile as FeeSuggestions,
     });
   }, [address]);
 }

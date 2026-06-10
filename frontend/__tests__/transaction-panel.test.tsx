@@ -4,6 +4,7 @@ import {
   GenLayerTransactionPanel,
   createMockKit,
   type SubmitInput,
+  type TransactionKit,
   type TrackedStatus,
 } from "@genlayer/transaction-kit-react";
 
@@ -14,10 +15,13 @@ const tx: SubmitInput = {
   args: ["2026-06-12", "Team A", "Team B", "1"],
 };
 
-function renderPanel(onDone?: (status: TrackedStatus) => void) {
+function renderPanel(
+  onDone?: (status: TrackedStatus) => void,
+  kit: TransactionKit = createMockKit({ delays: { estimate: 0, submit: 0, step: 0 } }),
+) {
   return render(
     <GenLayerTransactionPanel
-      kit={createMockKit({ delays: { estimate: 0, submit: 0, step: 0 } })}
+      kit={kit}
       tx={tx}
       network="GenLayer Studio"
       theme="dark"
@@ -38,10 +42,27 @@ describe("GenLayerTransactionPanel", () => {
     await waitFor(() => {
       expect(screen.getAllByText("GEN").length).toBeGreaterThan(0);
     });
+    expect(screen.getByText(/Sized from network defaults/)).toBeInTheDocument();
 
     const holdButton = document.querySelector<HTMLButtonElement>("button.gltk-hold");
     expect(holdButton).toBeInTheDocument();
     expect(holdButton).toBeEnabled();
+  });
+
+  it("renders developer fee profile source when suggestions match", async () => {
+    renderPanel(
+      undefined,
+      createMockKit({
+        suggestions: true,
+        delays: { estimate: 0, submit: 0, step: 0 },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Sized from the developer’s measured fee profile/),
+      ).toBeInTheDocument();
+    });
   });
 
   it("approving drives the flow to done", async () => {
