@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Loader2, Calendar, Users } from "lucide-react";
-import { useCreateBet } from "@/lib/hooks/useFootballBets";
-import type { FeePresetLevel } from "@/lib/genlayer/fees";
+import { useState, useEffect, useMemo } from "react";
+import { Plus, Calendar, Users, ArrowLeft } from "lucide-react";
+import { GenLayerTransactionPanel, type SubmitInput, type TrackedStatus } from "@genlayer/transaction-kit-react";
+import { useInvalidateBetsData } from "@/lib/hooks/useFootballBets";
+import { GENLAYER_NETWORK, getContractAddress } from "@/lib/genlayer/client";
+import { useTransactionKit } from "@/lib/genlayer/kit";
 import { useWallet } from "@/lib/genlayer/wallet";
-import { error } from "@/lib/utils/toast";
+import { error, success } from "@/lib/utils/toast";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -13,14 +15,16 @@ import { Label } from "./ui/label";
 
 export function CreateBetModal() {
   const { isConnected, address, isLoading } = useWallet();
-  const { createBet, isCreating, isSuccess } = useCreateBet();
+  const kit = useTransactionKit(address);
+  const invalidateBetsData = useInvalidateBetsData();
+  const contractAddress = getContractAddress();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"form" | "review">("form");
   const [gameDate, setGameDate] = useState("");
   const [team1, setTeam1] = useState("");
   const [team2, setTeam2] = useState("");
   const [predictedWinner, setPredictedWinner] = useState<"1" | "2" | "0" | "">("");
-  const [feePresetLevel, setFeePresetLevel] = useState<FeePresetLevel>("standard");
 
   const [errors, setErrors] = useState({
     gameDate: "",
@@ -29,13 +33,25 @@ export function CreateBetModal() {
     predictedWinner: "",
   });
 
+  // Stable tx identity: useTransactionFlow re-estimates (and resets the flow)
+  // whenever the tx object reference changes, so it must not be re-created on
+  // unrelated re-renders while the panel is mounted.
+  const createBetTx = useMemo<SubmitInput>(
+    () => ({
+      kind: "write",
+      address: contractAddress as `0x${string}`,
+      method: "create_bet",
+      args: [gameDate, team1, team2, predictedWinner],
+    }),
+    [contractAddress, gameDate, team1, team2, predictedWinner],
+  );
+
   // Auto-close modal when wallet disconnects
-  // Don't close if transaction is in progress to avoid interrupting user
   useEffect(() => {
-    if (!isConnected && isOpen && !isCreating) {
+    if (!isConnected && isOpen && step === "form") {
       setIsOpen(false);
     }
-  }, [isConnected, isOpen, isCreating]);
+  }, [isConnected, isOpen, step]);
 
   const validateForm = (): boolean => {
     const newErrors = {
@@ -73,17 +89,25 @@ export function CreateBetModal() {
       return;
     }
 
+    if (!kit) {
+      error("Transaction kit unavailable", {
+        description: "Please check your wallet connection and try again."
+      });
+      return;
+    }
+
+    if (!contractAddress) {
+      error("Contract address not configured", {
+        description: "Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file."
+      });
+      return;
+    }
+
     if (!validateForm()) {
       return;
     }
 
-    createBet({
-      gameDate,
-      team1,
-      team2,
-      predictedWinner: predictedWinner, // Send "1", "2", or "0" directly
-      feePresetLevel,
-    });
+    setStep("review");
   };
 
   const resetForm = () => {
@@ -91,23 +115,32 @@ export function CreateBetModal() {
     setTeam1("");
     setTeam2("");
     setPredictedWinner("");
+    setStep("form");
     setErrors({ gameDate: "", team1: "", team2: "", predictedWinner: "" });
   };
 
   const handleOpenChange = (open: boolean) => {
-    if (!open && !isCreating) {
+    if (!open) {
       resetForm();
     }
     setIsOpen(open);
   };
 
-  // Reset form and close modal on successful bet creation
-  useEffect(() => {
-    if (isSuccess) {
+  const handleDone = (status: TrackedStatus) => {
+    if (status.successful !== false) {
+      invalidateBetsData();
+      success("Bet created successfully!", {
+        description: "Your prediction has been recorded on the blockchain."
+      });
       resetForm();
       setIsOpen(false);
+      return;
     }
-  }, [isSuccess]);
+
+    error("Failed to create bet", {
+      description: "The transaction completed without a successful outcome."
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -125,6 +158,28 @@ export function CreateBetModal() {
           </DialogDescription>
         </DialogHeader>
 
+        {step === "review" && kit && contractAddress ? (
+          <div className="mt-4 space-y-4">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setStep("form")}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <GenLayerTransactionPanel
+              kit={kit}
+              tx={createBetTx}
+              network={GENLAYER_NETWORK.chainName}
+              theme="dark"
+              trackUntil="decided"
+              onDone={handleDone}
+            />
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
           {/* Game Date */}
           <div className="space-y-2">
@@ -247,31 +302,6 @@ export function CreateBetModal() {
             )}
           </div>
 
-          <div className="space-y-3">
-            <Label>Fee Preset</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {([
-                { value: "low", label: "Low", detail: "No appeals" },
-                { value: "standard", label: "Standard", detail: "1 appeal" },
-                { value: "high", label: "High", detail: "2 appeals" },
-              ] as const).map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setFeePresetLevel(option.value)}
-                  className={`rounded-md border px-3 py-2 text-left transition-all ${
-                    feePresetLevel === option.value
-                      ? "border-accent bg-accent/20 text-accent"
-                      : "border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <div className="text-sm font-semibold">{option.label}</div>
-                  <div className="mt-0.5 text-xs text-muted-foreground">{option.detail}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Submit Button */}
           <div className="flex gap-3 pt-4">
             <Button
@@ -279,7 +309,6 @@ export function CreateBetModal() {
               variant="secondary"
               className="flex-1"
               onClick={() => setIsOpen(false)}
-              disabled={isCreating}
             >
               Cancel
             </Button>
@@ -287,19 +316,13 @@ export function CreateBetModal() {
               type="submit"
               variant="gradient"
               className="flex-1"
-              disabled={isCreating}
+              disabled={!kit}
             >
-              {isCreating ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create Bet"
-              )}
+              Create Bet
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
