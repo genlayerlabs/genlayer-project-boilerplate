@@ -8,6 +8,11 @@
 ## About
 This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
 
+## Branching
+
+See [docs/BRANCHING.md](docs/BRANCHING.md) for the release-train model used by
+this repo.
+
 ## What's included
 - An example intelligent contract (Football Bets) with web access and LLM integration
 - **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
