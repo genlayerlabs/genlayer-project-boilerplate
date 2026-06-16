@@ -78,7 +78,7 @@ describe("GenLayerTransactionPanel", () => {
       return button;
     });
 
-    fireEvent.keyDown(holdButton, { key: "Enter" });
+    fireEvent.click(holdButton);
 
     await waitFor(
       () => {
