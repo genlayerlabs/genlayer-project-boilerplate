@@ -1,19 +1,21 @@
 {
   "version": 1,
-  "network": "studionet",
-  "measuredAt": "2026-06-10T12:00:00Z",
+  "network": "localnet",
+  "measuredAt": "2026-06-15T17:26:36Z",
   "deploy": {
-    "executionBudgetPerRound": "856250",
-    "totalMessageFees": "0"
+    "leaderTimeunitsAllocation": "125",
+    "validatorTimeunitsAllocation": "250",
+    "executionBudgetPerRound": "786434",
+    "totalMessageFees": "0",
+    "rotationsPerRound": "1"
   },
   "methods": {
     "create_bet": {
-      "executionBudgetPerRound": "412500",
-      "totalMessageFees": "0"
-    },
-    "resolve_bet": {
-      "executionBudgetPerRound": "1093750",
-      "totalMessageFees": "0"
+      "leaderTimeunitsAllocation": "125",
+      "validatorTimeunitsAllocation": "250",
+      "executionBudgetPerRound": "786297",
+      "totalMessageFees": "0",
+      "rotationsPerRound": "1"
     }
   }
 }

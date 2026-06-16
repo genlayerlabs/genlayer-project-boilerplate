@@ -8,7 +8,7 @@
     "build": "cd frontend && npm run build",
     "start": "cd frontend && npm run start",
     "lint": "cd frontend && npm run lint",
-    "test:fees": "gltest tests/integration --fee-profile frontend/fee-profile.json",
+    "test:fees": "python3 -m pytest tests/integration/test_football_bets.py::test_fee_profile_create_bet --fee-profile frontend/fee-profile.json -v -s",
     "deploy": "genlayer deploy"
   },
   "devDependencies": {

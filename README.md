@@ -120,7 +120,7 @@ The app will be available at http://localhost:3000/.
 
 `frontend/fee-profile.json` is measured by the contract test suite and passed verbatim as `suggestions` to `createTransactionKit`. When the profile matches a transaction, the panel shows "Sized from the developer's measured fee profile".
 
-Regenerate it with `npm run test:fees` while GenLayer Studio is running. `gltest` writes max-observed x 1.25 headroom as decimal strings.
+Regenerate it with `npm run test:fees` while GenLayer Studio is running. The fee profile command estimates a trusted Studio fee preset from the active fee policy, runs the measured Football Bets deploy/create-bet scenario, and writes max-observed x 1.25 headroom as decimal strings.
 
 Missing keys, such as time-unit allocations, fall back to network defaults.
 
