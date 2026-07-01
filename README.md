@@ -6,10 +6,11 @@
 [![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
 
 ## About
-This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
+This project includes boilerplate code for GenLayer use case implementations, including a football bets game and an infrastructure SLA adjudicator.
 
 ## What's included
-- An example intelligent contract (Football Bets) with web access and LLM integration
+- Example intelligent contracts with web access and LLM integration
+- Infrastructure SLA adjudication from provider status pages and uptime evidence
 - **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
 - **Integration tests** — full end-to-end tests against GenLayer Studio
 - **Contract linting** — static analysis to catch common contract issues before deployment
@@ -26,13 +27,19 @@ This project includes the boilerplate code for a GenLayer use case implementatio
 
 ```
 contracts/              # Python intelligent contracts
+  football_bets.py
+  infrastructure_sla_adjudicator.py
+docs/
+  infrastructure_sla_adjudicator.md
 tests/
   direct/               # Fast in-memory tests (no Studio required)
     test_create_bet.py   # Bet creation logic
     test_resolve_bet.py  # Bet resolution with web/LLM mocks
+    test_infrastructure_sla_adjudicator.py
     test_views.py        # Read-only view methods
   integration/           # Full tests against GenLayer Studio
     test_football_bets.py
+    test_infrastructure_sla_adjudicator.py
     fixtures.py          # Expected state fixtures
 frontend/               # Next.js 15 app (TypeScript, TanStack Query, Radix UI)
 deploy/                 # TypeScript deployment scripts
@@ -116,6 +123,12 @@ The app will be available at http://localhost:3000/.
 1. **Creating Bets**: Users bet on a football match by providing the game date, teams, and predicted winner.
 2. **Resolving Bets**: After the match, the contract fetches results from BBC Sport, uses an LLM to extract the score, and validates via the equivalence principle.
 3. **Points**: Correct predictions earn points. Users can query their points or the leaderboard.
+
+## How the Infrastructure SLA Adjudicator Works
+
+1. **Creating Agreements**: Providers create SLA agreements with a customer address, monitor URL, outage threshold, and credit amount.
+2. **Adjudicating Outages**: A monitor calls the contract when downtime is suspected. The contract fetches the status page and optional evidence URL, then validates the breach decision through GenLayer validators.
+3. **Credits**: Confirmed breaches record a claim and accrue customer credits in contract state.
 
 ## Testing Strategy
 
