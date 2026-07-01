@@ -95,6 +95,18 @@ def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
         contract.resolve_bet("2024-06-20_spain_italy")
 
 
+def test_resolve_out_of_range_winner_fails(direct_vm, direct_deploy, direct_alice):
+    """An LLM-extracted winner outside {-1, 0, 1, 2} must be rejected, not stored."""
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+    _setup_match_mocks(direct_vm, "9:9", 3)
+
+    with direct_vm.expect_revert("Invalid match result"):
+        contract.resolve_bet("2024-06-20_spain_italy")
+
+
 def test_multiple_users_resolve_independently(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
