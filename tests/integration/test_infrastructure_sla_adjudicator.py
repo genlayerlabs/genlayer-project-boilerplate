@@ -1,20 +1,20 @@
 import pytest
-from gltest import default_account, get_contract_factory
+from gltest import get_contract_factory, get_default_account
 from gltest.assertions import tx_execution_succeeded
 from gltest.helpers import load_fixture
 
 
 AGREEMENT_ID = "contabo-vps-1"
 MONITOR_URL = "https://status.example.com/incidents/vps"
+default_account = get_default_account()
 
 
-@pytest.mark.integration
 def deploy_contract():
     factory = get_contract_factory("InfrastructureSlaAdjudicator")
     contract = factory.deploy()
-    assert contract.get_agreements(args=[]) == {}
-    assert contract.get_claims(args=[]) == {}
-    assert contract.get_credits_due(args=[]) == {}
+    assert contract.get_agreements(args=[]).call() == {}
+    assert contract.get_claims(args=[]).call() == {}
+    assert contract.get_credits_due(args=[]).call() == {}
     return contract
 
 
@@ -32,10 +32,10 @@ def test_create_agreement_smoke():
             30,
             250,
         ]
-    )
+    ).transact()
     assert tx_execution_succeeded(result)
 
-    agreements = contract.get_agreements(args=[])
+    agreements = contract.get_agreements(args=[]).call()
     agreement = agreements[AGREEMENT_ID]
     assert agreement["provider_address"] == default_account.address
     assert agreement["customer_address"] == default_account.address

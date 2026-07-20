@@ -8,7 +8,7 @@ An Intelligent Contract example for adjudicating infrastructure SLA breaches fro
 2. An external monitor or operations job calls `adjudicate_outage()` when downtime is suspected.
 3. The contract fetches the provider status source with `gl.nondet.web.get()`.
 4. If provided, the contract also fetches a third-party evidence URL.
-5. Validators classify the outage independently and compare the breach decision.
+5. Validators re-fetch and classify the evidence independently, then compare the full normalized report.
 6. Confirmed breaches create an outage claim and accrue customer credit in `credits_due`.
 
 The first implementation records credits as contract state. Native transfers or token payouts can be wired through a follow-up payout adapter once the target repository's value-transfer pattern is selected.
@@ -90,7 +90,9 @@ gltest tests/integration/ -v -s
 
 ## Integration Notes
 
-- Use stable HTTPS monitor sources where possible.
+- Use HTTPS monitor and evidence sources; non-HTTPS URLs are rejected by the contract.
+- Service labels and fetched pages are JSON-encoded as untrusted prompt data; embedded instructions must be ignored.
+- Stored summaries are derived canonically from the normalized decision fields rather than copied from leader-authored text.
 - Keep evidence pages focused on the specific service and incident window.
-- For heavily dynamic status pages, a later variant can switch `_fetch_url_text()` from `gl.nondet.web.get()` to `gl.nondet.web.render(..., mode="text")`.
+- For heavily dynamic status pages, a later variant can switch the nondeterministic fetch from `gl.nondet.web.get()` to `gl.nondet.web.render(..., mode="text")`.
 - Keep the external monitor small: it only needs to detect suspected downtime and submit `adjudicate_outage()`.
