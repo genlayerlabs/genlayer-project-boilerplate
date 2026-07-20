@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import "@genlayer/transaction-kit-react/styles.css";
 import "./globals.css";
 import { Providers } from "./providers";
 

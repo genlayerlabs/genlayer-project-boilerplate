@@ -41,7 +41,7 @@ Web content:
 Respond in JSON:
 {{
     "score": str, // e.g., "1:2" or "-" if unresolved
-    "winner": int // 0 for draw, -1 if unresolved
+    "winner": int // 0 for draw, 1 if Team 1 won, 2 if Team 2 won, -1 if unresolved
 }}
 It is mandatory that you respond only using the JSON format above,
 nothing else. Don't include any other words or characters,
@@ -94,8 +94,15 @@ This result should be perfectly parsable by a JSON parser without errors.
         bet = self.bets[gl.message.sender_address][bet_id]
         bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
 
-        if int(bet_status["winner"]) < 0:
+        winner = int(bet_status["winner"])
+        if winner < 0:
             raise Exception("Game not finished")
+        # The prompt defines the full accepted value space: 0 = draw,
+        # 1 = team1, 2 = team2 (and -1 = unresolved, handled above).
+        # Reject anything outside it so a malformed extraction can never be
+        # stored or scored against a prediction.
+        if winner > 2:
+            raise Exception("Invalid match result")
 
         bet.has_resolved = True
         bet.real_winner = str(bet_status["winner"])

@@ -1,19 +1,43 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { Loader2, Trophy, Clock, AlertCircle } from "lucide-react";
-import { useBets, useResolveBet, useFootballBetsContract } from "@/lib/hooks/useFootballBets";
+import { GenLayerTransactionPanel, type SubmitInput, type TrackedStatus } from "@genlayer/transaction-kit-react";
+import { useBets, useFootballBetsContract, useInvalidateBetsData } from "@/lib/hooks/useFootballBets";
+import { GENLAYER_NETWORK, getContractAddress } from "@/lib/genlayer/client";
+import { useTransactionKit } from "@/lib/genlayer/kit";
 import { useWallet } from "@/lib/genlayer/wallet";
-import { error } from "@/lib/utils/toast";
+import { error, success } from "@/lib/utils/toast";
 import { AddressDisplay } from "./AddressDisplay";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
 import type { Bet } from "@/lib/contracts/types";
 
 export function BetsTable() {
   const contract = useFootballBetsContract();
   const { data: bets, isLoading, isError } = useBets();
   const { address, isConnected, isLoading: isWalletLoading } = useWallet();
-  const { resolveBet, isResolving, resolvingBetId } = useResolveBet();
+  const kit = useTransactionKit(address);
+  const invalidateBetsData = useInvalidateBetsData();
+  const contractAddress = getContractAddress();
+  const [resolvingBetId, setResolvingBetId] = useState<string | null>(null);
+
+  // Stable tx identity: useTransactionFlow re-estimates (and resets the flow)
+  // whenever the tx object reference changes, so it must not be re-created on
+  // unrelated re-renders while the panel is mounted.
+  const resolveBetTx = useMemo<SubmitInput | null>(
+    () =>
+      resolvingBetId
+        ? {
+            kind: "write",
+            address: contractAddress as `0x${string}`,
+            method: "resolve_bet",
+            args: [resolvingBetId],
+          }
+        : null,
+    [contractAddress, resolvingBetId],
+  );
 
   const handleResolve = (betId: string) => {
     if (!address) {
@@ -21,12 +45,36 @@ export function BetsTable() {
       return;
     }
 
-    // Confirmation popup
-    const confirmed = confirm("Are you sure you want to resolve this bet? This action will determine the winner.");
-
-    if (confirmed) {
-      resolveBet(betId);
+    if (!kit) {
+      error("Transaction kit unavailable", {
+        description: "Please check your wallet connection and try again."
+      });
+      return;
     }
+
+    if (!contractAddress) {
+      error("Contract address not configured", {
+        description: "Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file."
+      });
+      return;
+    }
+
+    setResolvingBetId(betId);
+  };
+
+  const handleResolveDone = (status: TrackedStatus) => {
+    if (status.successful !== false) {
+      invalidateBetsData();
+      success("Bet resolved successfully!", {
+        description: "The winner has been determined."
+      });
+      setResolvingBetId(null);
+      return;
+    }
+
+    error("Failed to resolve bet", {
+      description: "The transaction completed without a successful outcome."
+    });
   };
 
   if (isLoading) {
@@ -84,47 +132,73 @@ export function BetsTable() {
   }
 
   return (
-    <div className="brand-card p-6 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Date
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Teams
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Prediction
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Status
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Owner
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {bets.map((bet) => (
-              <BetRow
-                key={bet.id}
-                bet={bet}
-                currentAddress={address}
-                isConnected={isConnected}
-                isWalletLoading={isWalletLoading}
-                onResolve={handleResolve}
-                isResolving={isResolving && resolvingBetId === bet.id}
-              />
-            ))}
-          </tbody>
-        </table>
+    <>
+      <div className="brand-card p-6 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Date
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Teams
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Prediction
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Owner
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {bets.map((bet) => (
+                <BetRow
+                  key={bet.id}
+                  bet={bet}
+                  currentAddress={address}
+                  isConnected={isConnected}
+                  isWalletLoading={isWalletLoading}
+                  onResolve={handleResolve}
+                  isResolving={resolvingBetId === bet.id}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+
+      <Dialog open={!!resolvingBetId} onOpenChange={(open) => !open && setResolvingBetId(null)}>
+        <DialogContent className="brand-card border-2 sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">Resolve Bet</DialogTitle>
+            <DialogDescription>
+              Review the fee receipt and approve the transaction.
+            </DialogDescription>
+          </DialogHeader>
+
+          {kit && contractAddress && resolveBetTx && (
+            <div className="mt-4">
+              <GenLayerTransactionPanel
+                kit={kit}
+                tx={resolveBetTx}
+                network={GENLAYER_NETWORK.chainName}
+                theme="dark"
+                trackUntil="decided"
+                onDone={handleResolveDone}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

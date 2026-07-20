@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "network": "localnet",
+  "measuredAt": "2026-06-15T17:26:36Z",
+  "deploy": {
+    "leaderTimeunitsAllocation": "125",
+    "validatorTimeunitsAllocation": "250",
+    "executionBudgetPerRound": "786434",
+    "totalMessageFees": "0",
+    "rotationsPerRound": "1"
+  },
+  "methods": {
+    "create_bet": {
+      "leaderTimeunitsAllocation": "125",
+      "validatorTimeunitsAllocation": "250",
+      "executionBudgetPerRound": "786297",
+      "totalMessageFees": "0",
+      "rotationsPerRound": "1"
+    }
+  }
+}

@@ -1,12 +1,11 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import FootballBets from "../contracts/FootballBets";
 import { getContractAddress, getStudioUrl } from "../genlayer/client";
-import type { FeePresetLevel } from "../genlayer/fees";
 import { useWallet } from "../genlayer/wallet";
-import { success, error, configError } from "../utils/toast";
+import { configError } from "../utils/toast";
 import type { Bet, LeaderboardEntry } from "../contracts/types";
 
 /**
@@ -15,8 +14,6 @@ import type { Bet, LeaderboardEntry } from "../contracts/types";
  * Returns null if contract address is not configured.
  * The contract instance is recreated whenever the wallet address changes.
  * Read-only operations (getBets, getLeaderboard, etc.) work without a connected wallet.
- * Write operations (createBet, resolveBet) require a connected wallet and will fail
- * if the address is null. Defensive validation is added in the mutation hooks.
  */
 export function useFootballBetsContract(): FootballBets | null {
   const { address } = useWallet();
@@ -112,120 +109,12 @@ export function useLeaderboard() {
   });
 }
 
-/**
- * Hook to create a new bet
- */
-export function useCreateBet() {
-  const contract = useFootballBetsContract();
-  const { address } = useWallet();
+export function useInvalidateBetsData() {
   const queryClient = useQueryClient();
-  const [isCreating, setIsCreating] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: async ({
-      gameDate,
-      team1,
-      team2,
-      predictedWinner,
-      feePresetLevel,
-    }: {
-      gameDate: string;
-      team1: string;
-      team2: string;
-      predictedWinner: string;
-      feePresetLevel?: FeePresetLevel;
-    }) => {
-      if (!contract) {
-        throw new Error("Contract not configured. Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected. Please connect your wallet to create a bet.");
-      }
-      setIsCreating(true);
-      const feePreset = await contract.estimateCreateBetFees(
-        gameDate,
-        team1,
-        team2,
-        predictedWinner,
-        feePresetLevel ?? "standard"
-      );
-      return contract.createBet(gameDate, team1, team2, predictedWinner, feePreset);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch bets and points after successful creation
-      queryClient.invalidateQueries({ queryKey: ["bets"] });
-      queryClient.invalidateQueries({ queryKey: ["playerPoints"] });
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
-      setIsCreating(false);
-      success("Bet created successfully!", {
-        description: "Your prediction has been recorded on the blockchain."
-      });
-    },
-    onError: (err: any) => {
-      console.error("Error creating bet:", err);
-      setIsCreating(false);
-      error("Failed to create bet", {
-        description: err?.message || "Please try again."
-      });
-    },
-  });
-
-  return {
-    ...mutation,
-    isCreating,
-    createBet: mutation.mutate,
-    createBetAsync: mutation.mutateAsync,
-  };
-}
-
-/**
- * Hook to resolve a bet
- */
-export function useResolveBet() {
-  const contract = useFootballBetsContract();
-  const { address } = useWallet();
-  const queryClient = useQueryClient();
-  const [isResolving, setIsResolving] = useState(false);
-  const [resolvingBetId, setResolvingBetId] = useState<string | null>(null);
-
-  const mutation = useMutation({
-    mutationFn: async (betId: string) => {
-      if (!contract) {
-        throw new Error("Contract not configured. Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected. Please connect your wallet to resolve a bet.");
-      }
-      setIsResolving(true);
-      setResolvingBetId(betId);
-      return contract.resolveBet(betId);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch all data after successful resolution
-      queryClient.invalidateQueries({ queryKey: ["bets"] });
-      queryClient.invalidateQueries({ queryKey: ["playerPoints"] });
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
-      setIsResolving(false);
-      setResolvingBetId(null);
-      success("Bet resolved successfully!", {
-        description: "The winner has been determined."
-      });
-    },
-    onError: (err: any) => {
-      console.error("Error resolving bet:", err);
-      setIsResolving(false);
-      setResolvingBetId(null);
-      error("Failed to resolve bet", {
-        description: err?.message || "Please try again."
-      });
-    },
-  });
-
-  return {
-    ...mutation,
-    isResolving,
-    resolvingBetId,
-    resolveBet: mutation.mutate,
-    resolveBetAsync: mutation.mutateAsync,
-  };
+  return useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["bets"] });
+    queryClient.invalidateQueries({ queryKey: ["playerPoints"] });
+    queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+  }, [queryClient]);
 }
