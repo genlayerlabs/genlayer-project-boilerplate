@@ -166,23 +166,14 @@ def test_rewards_and_double_claim(
     # Set balances in VM to track changes
     direct_vm.deal(direct_alice, 0)
 
-    def hook(vm, request):
-        if "PostMessage" in request:
-            post_msg = request["PostMessage"]
-            addr = post_msg["address"]
-            val = post_msg["value"]
-            addr_bytes = vm._to_bytes(addr)
-            vm._balances[addr_bytes] = vm._balances.get(addr_bytes, 0) + val
-            return {"ok": None}
-        return None
-    direct_vm._gl_call_hook = hook
+    setup_transfer_hook(direct_vm)
 
     # Alice claims reward
     direct_vm.sender = direct_alice
     contract.claim_reward(claim_id)
 
     # Verify Alice's balance increased by 500
-    assert direct_vm._balances.get(direct_vm._to_bytes(direct_alice), 0) == 500
+    assert get_balance(direct_vm, direct_alice) == 500
 
     # Alice attempts to claim again -> reverts (stake was set to 0)
     with direct_vm.expect_revert("No winning stake"):
@@ -232,26 +223,17 @@ def test_rewards_multiple_winners(
     direct_vm.deal(direct_alice, 0)
     direct_vm.deal(direct_charlie, 0)
 
-    def hook(vm, request):
-        if "PostMessage" in request:
-            post_msg = request["PostMessage"]
-            addr = post_msg["address"]
-            val = post_msg["value"]
-            addr_bytes = vm._to_bytes(addr)
-            vm._balances[addr_bytes] = vm._balances.get(addr_bytes, 0) + val
-            return {"ok": None}
-        return None
-    direct_vm._gl_call_hook = hook
+    setup_transfer_hook(direct_vm)
 
     # Alice claims reward (should get 100 * 600 // 300 = 200)
     direct_vm.sender = direct_alice
     contract.claim_reward(claim_id)
-    assert direct_vm._balances.get(direct_vm._to_bytes(direct_alice), 0) == 200
+    assert get_balance(direct_vm, direct_alice) == 200
 
     # Charlie claims reward (should get 200 * 600 // 300 = 400)
     direct_vm.sender = direct_charlie
     contract.claim_reward(claim_id)
-    assert direct_vm._balances.get(direct_vm._to_bytes(direct_charlie), 0) == 400
+    assert get_balance(direct_vm, direct_charlie) == 400
 
     # Both attempt to claim again -> reverts
     direct_vm.sender = direct_alice
@@ -308,4 +290,28 @@ def test_revert_conditions(
 
 
 # End of test file
+
+
+def setup_transfer_hook(direct_vm):
+    """Encapsulates the workaround for tracking transfers in direct mode.
+    Since direct_vm doesn't natively handle PostMessage value transfers,
+    we intercept them using the internal _gl_call_hook to update balances.
+    """
+    def hook(vm, request):
+        if "PostMessage" in request:
+            post_msg = request["PostMessage"]
+            addr = post_msg["address"]
+            val = post_msg["value"]
+            addr_bytes = vm._to_bytes(addr)
+            vm._balances[addr_bytes] = vm._balances.get(addr_bytes, 0) + val
+            return {"ok": None}
+        return None
+    direct_vm._gl_call_hook = hook
+
+
+def get_balance(direct_vm, address) -> int:
+    """Read the balance of an address from direct_vm's balance storage."""
+    addr_bytes = direct_vm._to_bytes(address)
+    return direct_vm._balances.get(addr_bytes, 0)
+
 
