@@ -36,28 +36,17 @@ class FactChecker(gl.Contract):
         self.claims_count = u256(int(self.claims_count) + 1)
         claim_id = self.claims_count
 
-        total_true_stake = gl.message.value if initial_vote else u256(0)
-        total_false_stake = u256(0) if initial_vote else gl.message.value
-
         new_claim = Claim(
             id=claim_id,
             claim_text=claim_text,
             source_url=source_url,
             is_resolved=False,
             outcome=False,
-            total_true_stake=total_true_stake,
-            total_false_stake=total_false_stake,
+            total_true_stake=u256(0),
+            total_false_stake=u256(0),
         )
+        self._add_stake(new_claim, gl.message.sender_address, gl.message.value, initial_vote)
         self.claims[claim_id] = new_claim
-
-        if initial_vote:
-            self.true_stakes.get_or_insert_default(claim_id)[
-                gl.message.sender_address
-            ] = gl.message.value
-        else:
-            self.false_stakes.get_or_insert_default(claim_id)[
-                gl.message.sender_address
-            ] = gl.message.value
 
         return claim_id
 
@@ -72,22 +61,7 @@ class FactChecker(gl.Contract):
         if claim.is_resolved:
             raise gl.vm.UserError("Claim is already resolved")
 
-        caller = gl.message.sender_address
-        if vote:
-            stakes_map = self.true_stakes.get_or_insert_default(claim_id)
-            current_stake = int(stakes_map.get(caller, u256(0)))
-            stakes_map[caller] = u256(current_stake + int(gl.message.value))
-            claim.total_true_stake = u256(
-                int(claim.total_true_stake) + int(gl.message.value)
-            )
-        else:
-            stakes_map = self.false_stakes.get_or_insert_default(claim_id)
-            current_stake = int(stakes_map.get(caller, u256(0)))
-            stakes_map[caller] = u256(current_stake + int(gl.message.value))
-            claim.total_false_stake = u256(
-                int(claim.total_false_stake) + int(gl.message.value)
-            )
-
+        self._add_stake(claim, gl.message.sender_address, gl.message.value, vote)
         self.claims[claim_id] = claim
 
     @gl.public.write
@@ -133,24 +107,19 @@ class FactChecker(gl.Contract):
         caller = gl.message.sender_address
         total_pool = int(claim.total_true_stake) + int(claim.total_false_stake)
 
-        if claim.outcome:
-            stakes_map = self.true_stakes.get_or_insert_default(claim_id)
-            winning_stake = int(stakes_map.get(caller, u256(0)))
-            total_winning_pool = int(claim.total_true_stake)
-        else:
-            stakes_map = self.false_stakes.get_or_insert_default(claim_id)
-            winning_stake = int(stakes_map.get(caller, u256(0)))
-            total_winning_pool = int(claim.total_false_stake)
+        stakes_map = self._get_stakes_map(claim_id, claim.outcome)
+        winning_stake = int(stakes_map.get(caller, u256(0)))
+        total_winning_pool = int(
+            claim.total_true_stake if claim.outcome else claim.total_false_stake
+        )
 
         if winning_stake == 0:
             raise gl.vm.UserError("No winning stake")
 
         payout = (winning_stake * total_pool) // total_winning_pool
 
-        if claim.outcome:
-            self.true_stakes.get_or_insert_default(claim_id)[caller] = u256(0)
-        else:
-            self.false_stakes.get_or_insert_default(claim_id)[caller] = u256(0)
+        # Clear the winning stake to prevent double claim
+        stakes_map[caller] = u256(0)
 
         gl.get_contract_at(gl.message.sender_address).emit_transfer(
             value=u256(payout)
@@ -166,14 +135,37 @@ class FactChecker(gl.Contract):
     def get_true_stake(self, claim_id: u256, player: Address) -> u256:
         if not isinstance(player, Address):
             player = Address(player)
-        if claim_id not in self.true_stakes:
+        stakes_map = self._read_stakes_map(claim_id, True)
+        if stakes_map is None:
             return u256(0)
-        return self.true_stakes[claim_id].get(player, u256(0))
+        return stakes_map.get(player, u256(0))
 
     @gl.public.view
     def get_false_stake(self, claim_id: u256, player: Address) -> u256:
         if not isinstance(player, Address):
             player = Address(player)
-        if claim_id not in self.false_stakes:
+        stakes_map = self._read_stakes_map(claim_id, False)
+        if stakes_map is None:
             return u256(0)
-        return self.false_stakes[claim_id].get(player, u256(0))
+        return stakes_map.get(player, u256(0))
+
+    def _get_stakes_map(self, claim_id: u256, vote: bool) -> TreeMap[Address, u256]:
+        if vote:
+            return self.true_stakes.get_or_insert_default(claim_id)
+        else:
+            return self.false_stakes.get_or_insert_default(claim_id)
+
+    def _read_stakes_map(self, claim_id: u256, vote: bool) -> TreeMap[Address, u256] | None:
+        target_map = self.true_stakes if vote else self.false_stakes
+        if claim_id not in target_map:
+            return None
+        return target_map[claim_id]
+
+    def _add_stake(self, claim: Claim, caller: Address, amount: u256, vote: bool) -> None:
+        stakes_map = self._get_stakes_map(claim.id, vote)
+        current = int(stakes_map.get(caller, u256(0)))
+        stakes_map[caller] = u256(current + int(amount))
+        if vote:
+            claim.total_true_stake = u256(int(claim.total_true_stake) + int(amount))
+        else:
+            claim.total_false_stake = u256(int(claim.total_false_stake) + int(amount))
