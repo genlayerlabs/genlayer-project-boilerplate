@@ -1,25 +1,23 @@
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# { "Depends": "py-genlayer:9b8kjyda2ycxyq4ea6g4yfpnydxhd52gqba5rb8dw7krkh5mn9p0" }
 """
 PatternTest.py — Minimal contract to test GenLayer patterns.
 Covers: gl.vm.Return, partial field matching, u256 arithmetic,
 Address constructor, json.dumps sort_keys, nested TreeMap workaround.
 """
 import json
-from genlayer import *
-import genlayer.gl.vm as glvm
+import genlayer as gl
 
 
-class PatternTest(gl.Contract):
+class PatternTest(gl.contract.Contract):
     # Pattern 4: u256 storage
-    count: u256
-    amount: u256
+    count: gl.u256
+    amount: gl.u256
     # Pattern 7: nested TreeMap workaround (list stored as JSON string)
-    index: TreeMap[str, str]
+    index: gl.storage.TreeMap[str, str]
 
-    def __init__(self, initial_amount: u256 = u256(0)):
-        self.count = u256(0)
-        self.amount = u256(int(initial_amount))
-        self.index = TreeMap()
+    def __init__(self, initial_amount: gl.u256 = gl.u256(0)):
+        self.count = gl.u256(0)
+        self.amount = gl.u256(int(initial_amount))
 
     # ── Pattern 1 & 2: gl.vm.Return type check + partial field matching ──────
 
@@ -39,7 +37,7 @@ class PatternTest(gl.Contract):
 
         def validator_fn(leader_result) -> bool:
             # Pattern 1: isinstance check
-            if not isinstance(leader_result, glvm.Return):
+            if not isinstance(leader_result, gl.vm.Return):
                 return False
             # Pattern 2: partial field matching — only compare winner + score
             v = leader_fn()
@@ -48,30 +46,30 @@ class PatternTest(gl.Contract):
                 and leader_result.calldata["score"] == v["score"]
             )
 
-        result = glvm.run_nondet_unsafe(leader_fn, validator_fn)
+        result = gl.vm.run_nondet(leader_fn, validator_fn)
         return result
 
     @gl.public.write
     def get_match_result_raises(self) -> dict:
         """Leader fn raises — validator should see non-Return (UserError)."""
         def leader_fn() -> dict:
-            raise Exception("LLM failed")
+            raise gl.vm.UserError("LLM failed")
 
         def validator_fn(leader_result) -> bool:
             # If leader raised, leader_result should NOT be a Return
-            if not isinstance(leader_result, glvm.Return):
+            if not isinstance(leader_result, gl.vm.Return):
                 return False  # correct: error case
             return True
 
-        result = glvm.run_nondet_unsafe(leader_fn, validator_fn)
+        result = gl.vm.run_nondet(leader_fn, validator_fn)
         return result
 
     # ── Pattern 4: u256 arithmetic ────────────────────────────────────────────
 
     @gl.public.write
-    def increment(self) -> u256:
+    def increment(self) -> gl.u256:
         """Increment count by 1 using u256(int(self.count) + 1)."""
-        self.count = u256(int(self.count) + 1)
+        self.count = gl.u256(int(self.count) + 1)
         return self.count
 
     @gl.public.view
@@ -88,7 +86,7 @@ class PatternTest(gl.Contract):
     def set_party(self, party_b: str) -> str:
         """Accepts str address, wraps in Address constructor."""
         if isinstance(party_b, (str, bytes)):
-            party_b = Address(party_b)
+            party_b = gl.Address(party_b)
         return str(party_b)
 
     # ── Pattern 6: json.dumps sort_keys ──────────────────────────────────────
