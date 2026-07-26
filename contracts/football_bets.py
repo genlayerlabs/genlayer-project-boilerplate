@@ -1,8 +1,9 @@
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# { "Depends": "py-genlayer:9b8kjyda2ycxyq4ea6g4yfpnydxhd52gqba5rb8dw7krkh5mn9p0" }
 
 import json
 from dataclasses import dataclass
-from genlayer import *
+import genlayer as gl
+from genlayer.storage import allow as allow_storage
 
 
 @allow_storage
@@ -19,9 +20,9 @@ class Bet:
     real_score: str
 
 
-class FootballBets(gl.Contract):
-    bets: TreeMap[Address, TreeMap[str, Bet]]
-    points: TreeMap[Address, u256]
+class FootballBets(gl.contract.Contract):
+    bets: gl.storage.TreeMap[gl.Address, gl.storage.TreeMap[str, Bet]]
+    points: gl.storage.TreeMap[gl.Address, gl.u256]
 
     def __init__(self):
         pass
@@ -71,7 +72,7 @@ This result should be perfectly parsable by a JSON parser without errors.
 
         bet_id = f"{game_date}_{team1}_{team2}".lower()
         if sender_address in self.bets and bet_id in self.bets[sender_address]:
-            raise Exception("Bet already created")
+            raise gl.vm.UserError("Bet already created")
 
         bet = Bet(
             id=bet_id,
@@ -89,20 +90,20 @@ This result should be perfectly parsable by a JSON parser without errors.
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
         if self.bets[gl.message.sender_address][bet_id].has_resolved:
-            raise Exception("Bet already resolved")
+            raise gl.vm.UserError("Bet already resolved")
 
         bet = self.bets[gl.message.sender_address][bet_id]
         bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
 
         winner = int(bet_status["winner"])
         if winner < 0:
-            raise Exception("Game not finished")
+            raise gl.vm.UserError("Game not finished")
         # The prompt defines the full accepted value space: 0 = draw,
         # 1 = team1, 2 = team2 (and -1 = unresolved, handled above).
         # Reject anything outside it so a malformed extraction can never be
         # stored or scored against a prediction.
         if winner > 2:
-            raise Exception("Invalid match result")
+            raise gl.vm.UserError("Invalid match result")
 
         bet.has_resolved = True
         bet.real_winner = str(bet_status["winner"])
@@ -123,4 +124,4 @@ This result should be perfectly parsable by a JSON parser without errors.
 
     @gl.public.view
     def get_player_points(self, player_address: str) -> int:
-        return self.points.get(Address(player_address), 0)
+        return self.points.get(gl.Address(player_address), 0)

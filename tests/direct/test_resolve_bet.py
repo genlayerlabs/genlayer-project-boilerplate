@@ -1,8 +1,6 @@
 """Tests for bet resolution — requires web + LLM mocks."""
 
-import json
-
-from tests.direct.conftest import to_hex
+from tests.direct.conftest import mock_json_llm, to_hex
 
 
 def _setup_match_mocks(vm, score, winner):
@@ -11,9 +9,10 @@ def _setup_match_mocks(vm, score, winner):
         r".*bbc\.com/sport/football/scores-fixtures.*",
         {"status": 200, "body": f"Match result: {score}. Winner: team {winner}."},
     )
-    vm.mock_llm(
+    mock_json_llm(
+        vm,
         r".*Extract the match result.*",
-        json.dumps({"score": score, "winner": winner}),
+        {"score": score, "winner": winner},
     )
 
 

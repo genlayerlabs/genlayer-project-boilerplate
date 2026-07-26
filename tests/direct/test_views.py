@@ -1,8 +1,6 @@
 """Tests for read-only view methods."""
 
-import json
-
-from tests.direct.conftest import to_hex
+from tests.direct.conftest import mock_json_llm, to_hex
 
 
 def test_empty_bets(direct_deploy):
@@ -35,9 +33,10 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
         r".*bbc\.com/sport/football/scores-fixtures.*",
         {"status": 200, "body": "Match results available."},
     )
-    direct_vm.mock_llm(
+    mock_json_llm(
+        direct_vm,
         r".*Extract the match result.*",
-        json.dumps({"score": "1:0", "winner": 1}),
+        {"score": "1:0", "winner": 1},
     )
     contract.resolve_bet("2024-06-20_spain_italy")
 
@@ -47,9 +46,10 @@ def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
         r".*bbc\.com/sport/football/scores-fixtures.*",
         {"status": 200, "body": "Match results available."},
     )
-    direct_vm.mock_llm(
+    mock_json_llm(
+        direct_vm,
         r".*Extract the match result.*",
-        json.dumps({"score": "1:1", "winner": 0}),
+        {"score": "1:1", "winner": 0},
     )
     contract.resolve_bet("2024-06-20_denmark_england")
 
