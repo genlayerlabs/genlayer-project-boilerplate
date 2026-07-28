@@ -1,8 +1,23 @@
 import json
 import pytest
-from tests.direct.conftest import to_hex
 
 CONTRACT_PATH = "contracts/fact_checker.py"
+
+
+@pytest.fixture
+def mock_fact_checker_resolution(direct_vm):
+    def _mock(claim_url_pattern, is_true: bool, body_text: str = None):
+        if body_text is None:
+            body_text = f"Fact: Claim is {'true' if is_true else 'false'}"
+        direct_vm.mock_web(
+            rf".*{claim_url_pattern.replace('.', r'\.')}.*",
+            {"status": 200, "body": body_text},
+        )
+        direct_vm.mock_llm(
+            r".*Analyze the web content to determine if the claim is true or false.*",
+            json.dumps({"outcome": is_true}),
+        )
+    return _mock
 
 
 def test_claim_creation_and_limits(direct_vm, direct_deploy, direct_alice):
@@ -68,7 +83,7 @@ def test_place_stake(direct_vm, direct_deploy, direct_alice, direct_bob):
         contract.place_stake(claim_id, True)
 
 
-def test_resolution_true_outcome(direct_vm, direct_deploy, direct_alice):
+def test_resolution_true_outcome(direct_vm, direct_deploy, direct_alice, mock_fact_checker_resolution):
     contract = direct_deploy(CONTRACT_PATH)
 
     direct_vm.sender = direct_alice
@@ -78,14 +93,7 @@ def test_resolution_true_outcome(direct_vm, direct_deploy, direct_alice):
     )
 
     # Setup web and LLM mocks
-    direct_vm.mock_web(
-        r".*example\.com/claim1.*",
-        {"status": 200, "body": "Fact: Claim 1 is true"},
-    )
-    direct_vm.mock_llm(
-        r".*Analyze the web content to determine if the claim is true or false.*",
-        json.dumps({"outcome": True}),
-    )
+    mock_fact_checker_resolution("example.com/claim1", True, "Fact: Claim 1 is true")
 
     # Resolve claim
     contract.resolve_claim(claim_id)
@@ -95,7 +103,7 @@ def test_resolution_true_outcome(direct_vm, direct_deploy, direct_alice):
     assert claim.outcome is True
 
 
-def test_resolution_false_outcome(direct_vm, direct_deploy, direct_alice):
+def test_resolution_false_outcome(direct_vm, direct_deploy, direct_alice, mock_fact_checker_resolution):
     contract = direct_deploy(CONTRACT_PATH)
 
     direct_vm.sender = direct_alice
@@ -105,14 +113,7 @@ def test_resolution_false_outcome(direct_vm, direct_deploy, direct_alice):
     )
 
     # Setup web and LLM mocks
-    direct_vm.mock_web(
-        r".*example\.com/claim1.*",
-        {"status": 200, "body": "Fact: Claim 1 is false"},
-    )
-    direct_vm.mock_llm(
-        r".*Analyze the web content to determine if the claim is true or false.*",
-        json.dumps({"outcome": False}),
-    )
+    mock_fact_checker_resolution("example.com/claim1", False, "Fact: Claim 1 is false")
 
     # Resolve claim
     contract.resolve_claim(claim_id)
@@ -123,7 +124,7 @@ def test_resolution_false_outcome(direct_vm, direct_deploy, direct_alice):
 
 
 def test_rewards_and_double_claim(
-    direct_vm, direct_deploy, direct_alice, direct_bob
+    direct_vm, direct_deploy, direct_alice, direct_bob, mock_fact_checker_resolution
 ):
     contract = direct_deploy(CONTRACT_PATH)
 
@@ -147,14 +148,7 @@ def test_rewards_and_double_claim(
     # Total pool = 200 (True) + 300 (False) = 500
     # True wins. Alice has 200/200 of the winning pool, should get 500 payout.
     # Setup mocks
-    direct_vm.mock_web(
-        r".*example\.com/claim1.*",
-        {"status": 200, "body": "Fact: Claim 1 is true"},
-    )
-    direct_vm.mock_llm(
-        r".*Analyze the web content to determine if the claim is true or false.*",
-        json.dumps({"outcome": True}),
-    )
+    mock_fact_checker_resolution("example.com/claim1", True, "Fact: Claim 1 is true")
 
     contract.resolve_claim(claim_id)
 
@@ -181,7 +175,7 @@ def test_rewards_and_double_claim(
 
 
 def test_rewards_multiple_winners(
-    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie
+    direct_vm, direct_deploy, direct_alice, direct_bob, direct_charlie, mock_fact_checker_resolution
 ):
     contract = direct_deploy(CONTRACT_PATH)
 
@@ -203,14 +197,7 @@ def test_rewards_multiple_winners(
     contract.place_stake(claim_id, True)
 
     # Setup mocks
-    direct_vm.mock_web(
-        r".*example\.com/claim1.*",
-        {"status": 200, "body": "Fact: Claim 1 is true"},
-    )
-    direct_vm.mock_llm(
-        r".*Analyze the web content to determine if the claim is true or false.*",
-        json.dumps({"outcome": True}),
-    )
+    mock_fact_checker_resolution("example.com/claim1", True, "Fact: Claim 1 is true")
 
     contract.resolve_claim(claim_id)
 
@@ -246,7 +233,7 @@ def test_rewards_multiple_winners(
 
 
 def test_revert_conditions(
-    direct_vm, direct_deploy, direct_alice, direct_bob
+    direct_vm, direct_deploy, direct_alice, direct_bob, mock_fact_checker_resolution
 ):
     contract = direct_deploy(CONTRACT_PATH)
 
@@ -266,14 +253,7 @@ def test_revert_conditions(
         contract.claim_reward(claim_id)
 
     # Resolve the claim
-    direct_vm.mock_web(
-        r".*example\.com/claim1.*",
-        {"status": 200, "body": "Fact: Claim 1 is true"},
-    )
-    direct_vm.mock_llm(
-        r".*Analyze the web content to determine if the claim is true or false.*",
-        json.dumps({"outcome": True}),
-    )
+    mock_fact_checker_resolution("example.com/claim1", True, "Fact: Claim 1 is true")
     contract.resolve_claim(claim_id)
 
     # 3. Resolve already resolved claim
@@ -287,6 +267,43 @@ def test_revert_conditions(
     # 5. Get non-existent claim
     with direct_vm.expect_revert("Claim does not exist"):
         contract.get_claim(999)
+
+
+def test_rewards_no_winning_stakers_reclaim(
+    direct_vm, direct_deploy, direct_alice, direct_bob, mock_fact_checker_resolution
+):
+    contract = direct_deploy(CONTRACT_PATH)
+
+    # Alice creates a claim voting True with 100
+    direct_vm.sender = direct_alice
+    direct_vm.value = 100
+    claim_id = contract.create_claim(
+        "Claim 1", "https://example.com/claim1", True
+    )
+
+    # Claim resolves False, but nobody staked False. So total_winning_pool (False pool) is 0.
+    # Setup mocks
+    mock_fact_checker_resolution("example.com/claim1", False, "Fact: Claim 1 is false")
+
+    contract.resolve_claim(claim_id)
+
+    # Since False won but False stake is 0, Alice (who staked True/losing side) should be able to reclaim her original stake (100).
+    direct_vm.deal(direct_alice, 0)
+    setup_transfer_hook(direct_vm)
+
+    # Alice claims her stake back
+    direct_vm.sender = direct_alice
+    contract.claim_reward(claim_id)
+    assert get_balance(direct_vm, direct_alice) == 100
+
+    # Alice attempts to claim again -> reverts
+    with direct_vm.expect_revert("No stake to reclaim"):
+        contract.claim_reward(claim_id)
+
+    # Bob who had no stakes at all attempts to claim -> reverts
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert("No stake to reclaim"):
+        contract.claim_reward(claim_id)
 
 
 # End of test file

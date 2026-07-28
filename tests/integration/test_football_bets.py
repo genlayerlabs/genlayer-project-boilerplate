@@ -4,7 +4,7 @@ Run with: gltest tests/integration/ -v -s
 """
 
 import pytest
-from gltest import get_contract_factory, default_account
+from gltest import get_contract_factory, get_default_account
 from gltest.helpers import load_fixture
 from gltest.assertions import tx_execution_succeeded
 
@@ -38,6 +38,7 @@ def test_football_bets_success_win():
     create_bet_result = contract.create_bet(args=["2024-06-20", "Spain", "Italy", "1"])
     assert tx_execution_succeeded(create_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {
         default_account.address: football_bets_win_unresolved
@@ -50,12 +51,13 @@ def test_football_bets_success_win():
     )
     assert tx_execution_succeeded(resolve_successful_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {default_account.address: football_bets_win_resolved}
-
+    
     get_points_result = contract.get_points(args=[])
     assert get_points_result == {default_account.address: 1}
-
+    
     get_player_points_result = contract.get_player_points(
         args=[default_account.address]
     )
@@ -71,6 +73,7 @@ def test_football_bets_draw_success():
     )
     assert tx_execution_succeeded(create_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {
         default_account.address: football_bets_draw_unresolved
@@ -83,12 +86,13 @@ def test_football_bets_draw_success():
     )
     assert tx_execution_succeeded(resolve_successful_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {default_account.address: football_bets_draw_resolved}
-
+    
     get_points_result = contract.get_points(args=[])
     assert get_points_result == {default_account.address: 1}
-
+    
     get_player_points_result = contract.get_player_points(
         args=[default_account.address]
     )
@@ -102,6 +106,7 @@ def test_football_bets_unsuccess():
     create_bet_result = contract.create_bet(args=["2024-06-20", "Spain", "Italy", "2"])
     assert tx_execution_succeeded(create_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {
         default_account.address: football_bets_unsuccess_unresolved
@@ -114,14 +119,15 @@ def test_football_bets_unsuccess():
     )
     assert tx_execution_succeeded(resolve_successful_bet_result)
 
+    default_account = get_default_account()
     get_bet_result = contract.get_bets(args=[])
     assert get_bet_result == {
         default_account.address: football_bets_unsuccess_resolved
     }
-
+    
     get_points_result = contract.get_points(args=[])
     assert get_points_result == {}
-
+    
     get_player_points_result = contract.get_player_points(
         args=[default_account.address]
     )

@@ -1,0 +1,123 @@
+{
+  "runId": "f2893aa7",
+  "agent": "reviewer",
+  "task": "[Read from: C:\\Users\\PC\\genlayer-project-boilerplate\\plan.md, C:\\Users\\PC\\genlayer-project-boilerplate\\progress.md]\n\nRun a Standards review on the following git diff: `git diff main -- contracts/ frontend/lib/ frontend/components/ tests/`.\n\nHere are the commits:\n- 3e3260f test: encapsulate direct VM internals and fix private access smells in reward tests\n- ac95c5c refactor: simplify True/False stake branching in FactChecker contract\n- cb23f78 test: add multi-winner reward proportional payout test\n- 5a5c10f feat: add AI FactChecker prediction market contract with direct tests\n\nSmell Baseline to match against:\n- Mysterious Name — a function, variable, or type whose name doesn't reveal what it does or holds. -> rename it.\n- Duplicated Code — the same logic shape appears in more than one hunk or file in the change. -> extract the shared shape.\n- Feature Envy — a method that reaches into another object's data more than its own. -> move the method.\n- Data Clumps — the same few fields or params keep travelling together. -> bundle into a type.\n- Primitive Obsession — a primitive or string standing in for a domain concept. -> give it a small type.\n- Repeated Switches — the same switch/if-cascade on the same type recurs across the change. -> replace with map/polymorphism.\n- Shotgun Surgery — one logical change forces scattered edits across many files in the diff. -> gather into one module.\n- Divergent Change — one file or module is edited for several unrelated reasons. -> split the module.\n- Speculative Generality — abstraction, parameters, or hooks added for needs the spec doesn't have. -> delete or inline.\n- Message Chains — long a.b().c().d() navigation. -> hide behind method on the first object.\n- Middle Man — a class or function that mostly just delegates onward. -> cut it, call target directly.\n- Refused Bequest — a subclass that ignores/overrides most of what it inherits. -> drop inheritance, use composition.\n\nBrief:\nReport - per file/hunk where relevant - (a) every place the diff violates a documented standard: cite the standard; and (b) any baseline smell you spot: name it and quote the hunk. Distinguish hard violations from judgement calls - documented-standard breaches can be hard, but baseline smells are always judgement calls, and a documented repo standard overrides the baseline. Skip anything tooling enforces. Under 400 words.",
+  "exitCode": 0,
+  "usage": {
+    "input": 157607,
+    "output": 10817,
+    "cacheRead": 946701,
+    "cacheWrite": 0,
+    "cost": 0.032106243,
+    "turns": 28
+  },
+  "model": "antigravity/gemini-3.5-flash:high",
+  "attemptedModels": [
+    "antigravity/gemini-3.5-flash:high"
+  ],
+  "modelAttempts": [
+    {
+      "model": "antigravity/gemini-3.5-flash:high",
+      "success": true,
+      "exitCode": 0,
+      "usage": {
+        "input": 157607,
+        "output": 10817,
+        "cacheRead": 946701,
+        "cacheWrite": 0,
+        "cost": 0.032106243,
+        "turns": 28
+      }
+    }
+  ],
+  "durationMs": 529394,
+  "toolCount": 27,
+  "launchContractDigest": "b1e38f460c8966e4e85590af161714b40c4380f7aeff93bf1c7c7fad94937df2",
+  "acceptance": {
+    "status": "attested",
+    "evidenceStatus": "attested",
+    "explicit": false,
+    "effectiveAcceptance": {
+      "level": "attested",
+      "explicit": false,
+      "inferredReason": [
+        "read-only/reviewer-style agent"
+      ],
+      "criteria": [
+        {
+          "id": "criterion-1",
+          "must": "Return concrete findings with file paths and severity when applicable",
+          "evidence": [
+            "review-findings",
+            "residual-risks"
+          ],
+          "severity": "required"
+        }
+      ],
+      "evidence": [
+        "review-findings",
+        "residual-risks"
+      ],
+      "verify": [],
+      "stopRules": []
+    },
+    "inferredReason": [
+      "read-only/reviewer-style agent"
+    ],
+    "criteria": [
+      {
+        "id": "criterion-1",
+        "must": "Return concrete findings with file paths and severity when applicable",
+        "evidence": [
+          "review-findings",
+          "residual-risks"
+        ],
+        "severity": "required"
+      }
+    ],
+    "runtimeChecks": [],
+    "verifyRuns": [],
+    "childReport": {
+      "criteriaSatisfied": [
+        {
+          "id": "criterion-1",
+          "status": "satisfied",
+          "evidence": "Report includes concrete standard violations (unused import in test_fact_checker.py:3) and baseline code smells (Duplicated Code, Feature Envy) with file paths and line numbers."
+        }
+      ],
+      "changedFiles": [],
+      "testsAddedOrUpdated": [],
+      "commandsRun": [
+        {
+          "command": "python -m pytest tests/direct/ -v",
+          "result": "passed",
+          "summary": "Ran all 51 direct tests, all passed."
+        }
+      ],
+      "validationOutput": [
+        "Tests passed successfully: 51 passed in 3.51s"
+      ],
+      "residualRisks": [
+        "Unused imports and duplicated transaction confirmation logic in frontend/lib/contracts/FactChecker.ts could lead to maintenance overhead."
+      ],
+      "noStagedFiles": false,
+      "diffSummary": "Added AI FactChecker prediction market contract, direct tests, integration tests, and frontend components & hooks integration.",
+      "reviewFindings": [
+        "note: tests/direct/test_fact_checker.py:3 - Unused import to_hex",
+        "note: contracts/fact_checker.py:108-122 - Duplicated Code in get_true_stake and get_false_stake views",
+        "note: frontend/lib/contracts/FactChecker.ts:210-333 - Duplicated Code in write transaction methods",
+        "note: contracts/fact_checker.py:133-138 - Feature Envy in _add_stake mutating Claim fields directly"
+      ],
+      "manualNotes": ""
+    }
+  },
+  "effects": {
+    "fileMutation": {
+      "status": "not-applicable",
+      "expected": false,
+      "attempted": false
+    }
+  },
+  "transcriptPath": "C:\\Users\\PC\\genlayer-project-boilerplate\\.pi-subagents\\artifacts\\f2893aa7_reviewer_0_transcript.jsonl",
+  "timestamp": 1785193020446
+}

@@ -107,23 +107,34 @@ class FactChecker(gl.Contract):
         caller = gl.message.sender_address
         total_pool = int(claim.total_true_stake) + int(claim.total_false_stake)
 
-        stakes_map = self._get_stakes_map(claim_id, claim.outcome)
-        winning_stake = int(stakes_map.get(caller, u256(0)))
         total_winning_pool = int(
             claim.total_true_stake if claim.outcome else claim.total_false_stake
         )
 
-        if winning_stake == 0:
-            raise gl.vm.UserError("No winning stake")
+        if total_winning_pool == 0:
+            # If there are no winning stakers, we allow losing stakers to reclaim their original stake.
+            stakes_map = self._get_stakes_map(claim_id, not claim.outcome)
+            winning_stake = int(stakes_map.get(caller, u256(0)))
+            if winning_stake == 0:
+                raise gl.vm.UserError("No stake to reclaim")
+            payout = winning_stake
+        else:
+            stakes_map = self._get_stakes_map(claim_id, claim.outcome)
+            winning_stake = int(stakes_map.get(caller, u256(0)))
+            if winning_stake == 0:
+                raise gl.vm.UserError("No winning stake")
+            payout = (winning_stake * total_pool) // total_winning_pool
 
-        payout = (winning_stake * total_pool) // total_winning_pool
-
-        # Clear the winning stake to prevent double claim
+        # Clear the stake to prevent double claim
         stakes_map[caller] = u256(0)
 
         gl.get_contract_at(gl.message.sender_address).emit_transfer(
             value=u256(payout)
         )
+
+    @gl.public.view
+    def get_claims_count(self) -> u256:
+        return self.claims_count
 
     @gl.public.view
     def get_claim(self, claim_id: u256) -> Claim:
@@ -149,17 +160,18 @@ class FactChecker(gl.Contract):
             return u256(0)
         return stakes_map.get(player, u256(0))
 
+    def _get_stakes_root_map(self, vote: bool) -> TreeMap[u256, TreeMap[Address, u256]]:
+        return self.true_stakes if vote else self.false_stakes
+
     def _get_stakes_map(self, claim_id: u256, vote: bool) -> TreeMap[Address, u256]:
-        if vote:
-            return self.true_stakes.get_or_insert_default(claim_id)
-        else:
-            return self.false_stakes.get_or_insert_default(claim_id)
+        root_map = self._get_stakes_root_map(vote)
+        return root_map.get_or_insert_default(claim_id)
 
     def _read_stakes_map(self, claim_id: u256, vote: bool) -> TreeMap[Address, u256] | None:
-        target_map = self.true_stakes if vote else self.false_stakes
-        if claim_id not in target_map:
+        root_map = self._get_stakes_root_map(vote)
+        if claim_id not in root_map:
             return None
-        return target_map[claim_id]
+        return root_map[claim_id]
 
     def _add_stake(self, claim: Claim, caller: Address, amount: u256, vote: bool) -> None:
         stakes_map = self._get_stakes_map(claim.id, vote)

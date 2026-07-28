@@ -23,3 +23,5 @@ __pycache__/
 *.compiled.js
 package-lock.json
 
+# Local Pi runtime state
+.atl/

@@ -31,3 +31,13 @@ export interface BetFilters {
   resolved?: boolean;
   owner?: string;
 }
+
+export interface Claim {
+  id: string;
+  claim_text: string;
+  source_url: string;
+  is_resolved: boolean;
+  outcome: boolean;
+  total_true_stake: string;
+  total_false_stake: string;
+}
