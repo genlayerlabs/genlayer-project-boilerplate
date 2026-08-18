@@ -135,6 +135,7 @@ For AI coding agents (Claude Code, Cursor, etc.), the linter and direct tests pr
 ## Community
 - **[Discord](https://discord.gg/8Jm4v89VAu)**: Discussions, support, and announcements
 - **[Telegram](https://t.me/genlayer)**: Informal chats and quick updates
+- **[YouTube](https://www.youtube.com/@GenLayer)**: Video tutorials and updates
 
 ## Documentation
 For detailed information, see our [documentation](https://docs.genlayer.com/).
