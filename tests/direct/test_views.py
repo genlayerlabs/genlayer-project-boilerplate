@@ -1,6 +1,6 @@
 """Tests for read-only view methods."""
 
-from tests.direct.conftest import mock_json_llm, to_hex
+from tests.direct.conftest import PRE_MATCH_CLOCK, mock_json_llm, to_hex
 
 
 def test_empty_bets(direct_deploy):
@@ -20,6 +20,7 @@ def test_get_player_points_default_zero(direct_deploy, direct_alice):
 
 
 def test_points_accumulate(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)

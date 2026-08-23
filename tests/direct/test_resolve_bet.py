@@ -1,6 +1,6 @@
 """Tests for bet resolution — requires web + LLM mocks."""
 
-from tests.direct.conftest import mock_json_llm, to_hex
+from tests.direct.conftest import PRE_MATCH_CLOCK, mock_json_llm, to_hex
 
 
 def _setup_match_mocks(vm, score, winner):
@@ -17,6 +17,7 @@ def _setup_match_mocks(vm, score, winner):
 
 
 def test_resolve_winning_bet(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)
@@ -36,6 +37,7 @@ def test_resolve_winning_bet(direct_vm, direct_deploy, direct_alice):
 
 
 def test_resolve_losing_bet_no_points(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)
@@ -52,6 +54,7 @@ def test_resolve_losing_bet_no_points(direct_vm, direct_deploy, direct_alice):
 
 
 def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)
@@ -71,6 +74,7 @@ def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice):
 
 
 def test_resolve_already_resolved_fails(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -84,6 +88,7 @@ def test_resolve_already_resolved_fails(direct_vm, direct_deploy, direct_alice):
 
 
 def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -96,6 +101,7 @@ def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
 
 def test_resolve_out_of_range_winner_fails(direct_vm, direct_deploy, direct_alice):
     """An LLM-extracted winner outside {-1, 0, 1, 2} must be rejected, not stored."""
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -109,6 +115,7 @@ def test_resolve_out_of_range_winner_fails(direct_vm, direct_deploy, direct_alic
 def test_multiple_users_resolve_independently(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     alice = to_hex(direct_alice)
     bob = to_hex(direct_bob)

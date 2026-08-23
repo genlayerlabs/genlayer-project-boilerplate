@@ -1,9 +1,10 @@
 """Tests for bet creation logic (no mocks needed — create_bet is deterministic)."""
 
-from tests.direct.conftest import to_hex
+from tests.direct.conftest import PRE_MATCH_CLOCK, to_hex
 
 
 def test_create_bet(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)
@@ -26,6 +27,7 @@ def test_create_bet(direct_vm, direct_deploy, direct_alice):
 
 
 def test_create_multiple_bets(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)
@@ -40,6 +42,7 @@ def test_create_multiple_bets(direct_vm, direct_deploy, direct_alice):
 
 
 def test_create_duplicate_bet_fails(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
 
@@ -52,6 +55,7 @@ def test_create_duplicate_bet_fails(direct_vm, direct_deploy, direct_alice):
 def test_different_users_can_bet_same_match(
     direct_vm, direct_deploy, direct_alice, direct_bob
 ):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     alice = to_hex(direct_alice)
     bob = to_hex(direct_bob)
@@ -69,6 +73,7 @@ def test_different_users_can_bet_same_match(
 
 
 def test_bet_id_is_lowercase(direct_vm, direct_deploy, direct_alice):
+    direct_vm.warp(PRE_MATCH_CLOCK)
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
     alice = to_hex(direct_alice)

@@ -212,6 +212,9 @@ def test_run_validator_with_football_bets_skips_gracefully(direct_vm, direct_dep
     direct_vm.mock_web(r".*bbc.*", {"status": 200, "body": "Spain 3-0 Italy"})
     direct_vm.mock_llm(r".*", '{"score": "3:0", "winner": 1}')
 
+    # create_bet refuses bets from on/after the match day; warp before deploying
+    # so the contract sees a pre-match transaction time.
+    direct_vm.warp("2024-06-19T12:00:00Z")
     contract = direct_deploy("contracts/football_bets.py")
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 
@@ -299,6 +302,9 @@ def test_web_render_text_mode_works(direct_vm, direct_deploy):
     direct_vm.mock_web(r".*bbc.*", {"status": 200, "body": "Spain 3-0 Italy full time"})
     direct_vm.mock_llm(r".*", '{"score": "3:0", "winner": 1}')
 
+    # create_bet refuses bets from on/after the match day; warp before deploying
+    # so the contract sees a pre-match transaction time.
+    direct_vm.warp("2024-06-19T12:00:00Z")
     contract = direct_deploy("contracts/football_bets.py")
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
 

@@ -2,6 +2,15 @@
 
 import json
 
+PRE_MATCH_CLOCK = "2024-06-19T12:00:00Z"
+"""Transaction time for tests that bet on the 2024-06-20 fixtures.
+
+`create_bet` refuses bets placed on or after the fixture's match day, so tests
+have to place the transaction clock before it. Direct mode injects
+`gl.message.raw["datetime"]` when the contract is deployed, which means
+`direct_vm.warp()` only takes effect if it runs *before* `direct_deploy()`.
+"""
+
 
 def to_hex(addr_bytes):
     """Convert address bytes to checksummed hex matching contract output.
