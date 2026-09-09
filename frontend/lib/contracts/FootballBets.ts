@@ -1,5 +1,5 @@
 import { createClient } from "genlayer-js";
-import { studionet } from "genlayer-js/chains";
+import { GENLAYER_CHAIN } from "../genlayer/client";
 import type { Bet, LeaderboardEntry } from "./types";
 
 /**
@@ -8,26 +8,16 @@ import type { Bet, LeaderboardEntry } from "./types";
 class FootballBets {
   private contractAddress: `0x${string}`;
   private client: any;
-  private studioUrl?: string;
 
-  constructor(
-    contractAddress: string,
-    address?: string | null,
-    studioUrl?: string
-  ) {
+  constructor(contractAddress: string, address?: string | null) {
     this.contractAddress = contractAddress as `0x${string}`;
-    this.studioUrl = studioUrl;
 
     const config: any = {
-      chain: studionet,
+      chain: GENLAYER_CHAIN,
     };
 
     if (address) {
       config.account = address as `0x${string}`;
-    }
-
-    if (studioUrl) {
-      config.endpoint = studioUrl;
     }
 
     this.client = createClient(config);
@@ -38,13 +28,9 @@ class FootballBets {
    */
   updateAccount(address: string): void {
     const config: any = {
-      chain: studionet,
+      chain: GENLAYER_CHAIN,
       account: address as `0x${string}`,
     };
-
-    if (this.studioUrl) {
-      config.endpoint = this.studioUrl;
-    }
 
     this.client = createClient(config);
   }

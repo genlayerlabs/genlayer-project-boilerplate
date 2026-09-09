@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import FootballBets from "../contracts/FootballBets";
-import { getContractAddress, getStudioUrl } from "../genlayer/client";
+import { getContractAddress } from "../genlayer/client";
 import { useWallet } from "../genlayer/wallet";
 import { configError } from "../utils/toast";
 import type { Bet, LeaderboardEntry } from "../contracts/types";
@@ -18,8 +18,6 @@ import type { Bet, LeaderboardEntry } from "../contracts/types";
 export function useFootballBetsContract(): FootballBets | null {
   const { address } = useWallet();
   const contractAddress = getContractAddress();
-  const studioUrl = getStudioUrl();
-
   const contract = useMemo(() => {
     // Validate contract address is configured
     if (!contractAddress) {
@@ -37,8 +35,8 @@ export function useFootballBetsContract(): FootballBets | null {
 
     // Contract instance is recreated when address changes to ensure
     // the genlayer-js client is properly configured with the current account
-    return new FootballBets(contractAddress, address, studioUrl);
-  }, [contractAddress, address, studioUrl]);
+    return new FootballBets(contractAddress, address);
+  }, [contractAddress, address]);
 
   return contract;
 }

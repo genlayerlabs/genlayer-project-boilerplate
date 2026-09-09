@@ -12,6 +12,6 @@
     "deploy": "genlayer deploy"
   },
   "devDependencies": {
-    "genlayer-js": "github:genlayerlabs/genlayer-js#v2-dev"
+    "genlayer-js": "2.0.0-rc.1"
   }
 }
