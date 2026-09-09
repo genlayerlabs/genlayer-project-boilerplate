@@ -78,7 +78,7 @@ export default function HomePage() {
                 Powered by GenLayer
               </a>
               <a
-                href="https://studio.genlayer.com"
+                href="https://studio-next.genlayer.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-accent transition-colors"

@@ -122,8 +122,8 @@ The frontend uses published `@genlayer/transaction-kit` and
 `@genlayer/transaction-kit-react` version `0.1.0-rc.2`, with `genlayer-js`
 `2.0.0-rc.1`. Run `npm ci` from the repository root to install the locked releases.
 
-The default network is the Consensus v0.6 preview at
-`https://studio-dev.genlayer.com/api` (chain ID `61997`). Copy
+The default network is Studio Next (Consensus v0.6) at
+`https://studio-next.genlayer.com/api` (chain ID `61997`). Copy
 `frontend/.env.example`; change the RPC URL and chain ID together when targeting
 another deployment. Wallet, SDK, and Transaction Kit share this configuration.
 
