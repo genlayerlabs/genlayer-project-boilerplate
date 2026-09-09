@@ -23,7 +23,12 @@ cp .env.example .env
 
 3. Configure environment variables:
    - `NEXT_PUBLIC_CONTRACT_ADDRESS` - GenLayer Football Betting contract address
-   - `NEXT_PUBLIC_STUDIO_URL` - GenLayer Studio URL (default: https://studio.genlayer.com/api)
+   - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer RPC URL (defaults to `https://studio-dev.genlayer.com/api`)
+   - `NEXT_PUBLIC_GENLAYER_CHAIN_ID` - RPC chain ID (defaults to `61997`)
+   - `NEXT_PUBLIC_GENLAYER_CHAIN_NAME` - Network label shown to users
+
+   Change the RPC URL and chain ID together. The same resolved network is used
+   by MetaMask, `genlayer-js`, and Transaction Kit.
 
 ## Development
 
@@ -55,7 +60,7 @@ npm start
 
 ## Tech Stack
 
-- **Next.js 15** - React framework with App Router
+- **Next.js 16** - React framework with App Router
 - **TypeScript** - Type safety
 - **Tailwind CSS v4** - Styling with custom glass-morphism theme
 - **genlayer-js** - GenLayer blockchain SDK
@@ -65,13 +70,9 @@ npm start
 
 ## Wallet Management
 
-The app uses GenLayer's account system:
-- **Create Account**: Generate a new private key
-- **Import Account**: Import existing private key
-- **Export Account**: Export your private key (secured)
-- **Disconnect**: Clear stored account data
-
-Accounts are stored in browser's localStorage for development convenience.
+The app connects to MetaMask, adds or switches to the configured GenLayer
+network, supports account switching, and remembers only the user's explicit
+disconnect preference. Private keys are never stored by the application.
 
 ## Features
 
@@ -81,4 +82,4 @@ Accounts are stored in browser's localStorage for development convenience.
 - **Leaderboard**: Track top players by points earned from correct predictions
 - **Player Stats**: View your points and ranking in the community
 - **Glass-morphism UI**: Premium dark theme with OKLCH colors, backdrop blur effects, and smooth animations
-- **Real-time Updates**: Automatic data fetching with 3-second polling intervals via TanStack Query
+- **Data Refresh**: TanStack Query refreshes contract data after completed transactions and when the window regains focus

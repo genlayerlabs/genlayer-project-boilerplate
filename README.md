@@ -118,7 +118,20 @@ The app will be available at http://localhost:3000/.
 
 ### Fee profile (developer suggestions)
 
-`frontend/fee-profile.json` is measured by the contract test suite and passed verbatim as `suggestions` to `createTransactionKit`. When the profile matches a transaction, the panel shows "Sized from the developer's measured fee profile".
+The frontend uses published `@genlayer/transaction-kit` and
+`@genlayer/transaction-kit-react` version `0.1.0-rc.2`, with `genlayer-js`
+`2.0.0-rc.1`. Run `npm ci` from the repository root to install the locked releases.
+
+The default network is the Consensus v0.6 preview at
+`https://studio-dev.genlayer.com/api` (chain ID `61997`). Copy
+`frontend/.env.example`; change the RPC URL and chain ID together when targeting
+another deployment. Wallet, SDK, and Transaction Kit share this configuration.
+
+Transaction Kit uses active network fee defaults. The checked-in
+`frontend/fee-profile.json` is not wired into the application because measured
+fees are specific to a contract build, GenVM version, and network. To use a
+developer profile, regenerate it for your deployment and explicitly pass it as
+`suggestions` to `createTransactionKit` in `frontend/lib/genlayer/kit.ts`.
 
 Regenerate it with `npm run test:fees` while GenLayer Studio is running. The fee profile command estimates a trusted Studio fee preset from the active fee policy, runs the measured Football Bets deploy/create-bet scenario, and writes max-observed x 1.25 headroom as decimal strings.
 
