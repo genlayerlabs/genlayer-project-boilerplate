@@ -9,11 +9,11 @@ import {
 } from "../lib/genlayer/network";
 
 describe("GenLayer network configuration", () => {
-  it("defaults every consumer to the Studio v0.6 preview", () => {
+  it("defaults every consumer to Studio Next", () => {
     expect(GENLAYER_CHAIN).toMatchObject({
       id: studioDevnet.id,
-      name: studioDevnet.name,
-      rpcUrls: studioDevnet.rpcUrls,
+      name: "GenLayer Studio Next",
+      rpcUrls: { default: { http: ["https://studio-next.genlayer.com/api"] } },
     });
     expect(GENLAYER_CHAIN_ID).toBe(studioDevnet.id);
     expect(GENLAYER_CHAIN_ID_HEX).toBe(`0x${studioDevnet.id.toString(16).toUpperCase()}`);
