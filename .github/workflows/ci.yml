@@ -1,10 +1,14 @@
 name: CI
 
 on:
+  # Run CI on development branches too. The branch-policy workflow retargets
+  # PRs away from main to the active development branch (currently v2-dev), so
+  # filtering these events to main would leave the normal contribution path
+  # without lint or direct-test checks.
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
-    branches: [main]
+    branches: ["**"]
 
 jobs:
   lint-contracts:

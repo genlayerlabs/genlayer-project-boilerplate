@@ -59,6 +59,12 @@ This result should be perfectly parsable by a JSON parser without errors.
     def create_bet(
         self, game_date: str, team1: str, team2: str, predicted_winner: str
     ) -> None:
+        # The winner value space is 0 = draw, 1 = team1, 2 = team2,
+        # mirroring the resolve-side validation (#69). Anything else can
+        # never win and must be rejected up front.
+        if predicted_winner not in ("0", "1", "2"):
+            raise gl.vm.UserError("Invalid predicted winner")
+
         match_resolution_url = (
             "https://www.bbc.com/sport/football/scores-fixtures/" + game_date
         )
@@ -89,24 +95,29 @@ This result should be perfectly parsable by a JSON parser without errors.
 
     @gl.public.write
     def resolve_bet(self, bet_id: str) -> None:
-        if self.bets[gl.message.sender_address][bet_id].has_resolved:
+        sender_address = gl.message.sender_address
+        if sender_address not in self.bets or bet_id not in self.bets[sender_address]:
+            raise gl.vm.UserError("Bet not found")
+
+        bet = self.bets[sender_address][bet_id]
+        if bet.has_resolved:
             raise gl.vm.UserError("Bet already resolved")
 
-        bet = self.bets[gl.message.sender_address][bet_id]
         bet_status = self._check_match(bet.resolution_url, bet.team1, bet.team2)
 
         winner = int(bet_status["winner"])
-        if winner < 0:
+        # -1 is the documented "unresolved" sentinel from the extraction prompt.
+        if winner == -1:
             raise gl.vm.UserError("Game not finished")
         # The prompt defines the full accepted value space: 0 = draw,
         # 1 = team1, 2 = team2 (and -1 = unresolved, handled above).
         # Reject anything outside it so a malformed extraction can never be
         # stored or scored against a prediction.
-        if winner > 2:
+        if winner not in (0, 1, 2):
             raise gl.vm.UserError("Invalid match result")
 
         bet.has_resolved = True
-        bet.real_winner = str(bet_status["winner"])
+        bet.real_winner = str(winner)
         bet.real_score = bet_status["score"]
 
         if bet.real_winner == bet.predicted_winner:

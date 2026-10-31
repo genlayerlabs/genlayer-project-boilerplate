@@ -132,3 +132,47 @@ def test_multiple_users_resolve_independently(
     direct_vm.sender = direct_bob
     contract.resolve_bet("2024-06-20_spain_italy")
     assert contract.get_player_points(bob) == 0
+
+
+def test_resolve_with_no_bets_fails(direct_vm, direct_deploy, direct_alice):
+    """Resolving when the sender has never bet must revert cleanly, not KeyError."""
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    with direct_vm.expect_revert("Bet not found"):
+        contract.resolve_bet("2024-06-20_spain_italy")
+
+
+def test_resolve_unknown_bet_id_fails(direct_vm, direct_deploy, direct_alice):
+    """Resolving a bet id the sender never created must revert cleanly."""
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+
+    with direct_vm.expect_revert("Bet not found"):
+        contract.resolve_bet("2024-06-20_italy_spain")
+
+
+def test_resolve_other_players_bet_fails(direct_vm, direct_deploy, direct_alice, direct_bob):
+    """Bets are per-player: Bob cannot resolve Alice's bet id."""
+    contract = direct_deploy("contracts/football_bets.py")
+
+    direct_vm.sender = direct_alice
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+
+    direct_vm.sender = direct_bob
+    with direct_vm.expect_revert("Bet not found"):
+        contract.resolve_bet("2024-06-20_spain_italy")
+
+
+def test_resolve_malformed_negative_winner_fails(direct_vm, direct_deploy, direct_alice):
+    """Only the exact -1 sentinel means unresolved; other negatives are invalid."""
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+    _setup_match_mocks(direct_vm, "-", -5)
+
+    with direct_vm.expect_revert("Invalid match result"):
+        contract.resolve_bet("2024-06-20_spain_italy")
