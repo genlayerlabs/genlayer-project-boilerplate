@@ -77,3 +77,24 @@ def test_bet_id_is_lowercase(direct_vm, direct_deploy, direct_alice):
 
     bets = contract.get_bets()
     assert "2024-06-20_spain_italy" in bets[alice]
+
+
+def test_create_bet_invalid_predicted_winner_fails(direct_vm, direct_deploy, direct_alice):
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    with direct_vm.expect_revert("Invalid predicted winner"):
+        contract.create_bet("2024-06-20", "Spain", "Italy", "3")
+
+    with direct_vm.expect_revert("Invalid predicted winner"):
+        contract.create_bet("2024-06-20", "Spain", "Italy", "banana")
+
+
+def test_create_bet_invalid_winner_stores_nothing(direct_vm, direct_deploy, direct_alice):
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    with direct_vm.expect_revert("Invalid predicted winner"):
+        contract.create_bet("2024-06-20", "Spain", "Italy", "3")
+
+    assert contract.get_bets() == {}
