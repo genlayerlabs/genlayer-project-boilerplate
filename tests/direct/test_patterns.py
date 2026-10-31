@@ -10,6 +10,8 @@ import json
 import pytest
 from pathlib import Path
 
+from tests.direct.conftest import mock_json_llm
+
 CONTRACT_PATH = "contracts/PatternTest.py"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +110,7 @@ class TestGlVmReturn:
         isinstance(leader_result, gl.vm.Return) → True.
         """
         # Mock LLM so leader_fn doesn't fail
-        direct_vm.mock_llm(r".*", '{"winner": 1, "score": "2:1"}')
+        mock_json_llm(direct_vm, r".*", {"winner": 1, "score": "2:1"})
         contract = direct_deploy(CONTRACT_PATH)
         # Should succeed — validator sees Return, returns True → consensus
         result = contract.get_match_result(True)
@@ -120,12 +122,12 @@ class TestGlVmReturn:
         """
         When leader raises, validator_fn receives UserError (not Return).
         isinstance(leader_result, gl.vm.Return) → False.
-        The validator returns False on error, which causes run_nondet_unsafe to fail.
+        The validator returns False on error, which causes run_nondet to fail.
         """
-        direct_vm.mock_llm(r".*", '{"winner": 1}')
+        mock_json_llm(direct_vm, r".*", {"winner": 1})
         contract = direct_deploy(CONTRACT_PATH)
         # get_match_result_raises: leader always raises, validator returns False
-        # run_nondet_unsafe should raise/revert since validator returns False
+        # run_nondet should raise/revert since validator returns False
         from gltest.direct import ContractRollback
         with pytest.raises((ContractRollback, Exception)):
             contract.get_match_result_raises()
@@ -140,7 +142,7 @@ class TestPartialFieldMatching:
         Validator only checks winner + score.
         Consensus reached even though 'analysis' varies.
         """
-        direct_vm.mock_llm(r".*", '{"winner": 1, "score": "2:1"}')
+        mock_json_llm(direct_vm, r".*", {"winner": 1, "score": "2:1"})
         contract = direct_deploy(CONTRACT_PATH)
         result = contract.get_match_result(True)
         assert result["winner"] == 1
@@ -150,7 +152,7 @@ class TestPartialFieldMatching:
 
     def test_partial_match_team2_wins(self, direct_vm, direct_deploy):
         """Partial matching also works for team2 wins scenario."""
-        direct_vm.mock_llm(r".*", '{"winner": 2, "score": "0:3"}')
+        mock_json_llm(direct_vm, r".*", {"winner": 2, "score": "0:3"})
         contract = direct_deploy(CONTRACT_PATH)
         result = contract.get_match_result(False)
         assert result["winner"] == 2

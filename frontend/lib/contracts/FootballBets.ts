@@ -1,12 +1,6 @@
 import { createClient } from "genlayer-js";
-import { studionet } from "genlayer-js/chains";
-import type { Bet, LeaderboardEntry, TransactionReceipt } from "./types";
-import {
-  estimateWriteFeePreset,
-  feePresetToTransactionFees,
-  type FeePresetEstimate,
-  type FeePresetLevel,
-} from "../genlayer/fees";
+import { GENLAYER_CHAIN } from "../genlayer/client";
+import type { Bet, LeaderboardEntry } from "./types";
 
 /**
  * FootballBets contract class for interacting with the GenLayer Football Betting contract
@@ -14,26 +8,16 @@ import {
 class FootballBets {
   private contractAddress: `0x${string}`;
   private client: any;
-  private studioUrl?: string;
 
-  constructor(
-    contractAddress: string,
-    address?: string | null,
-    studioUrl?: string
-  ) {
+  constructor(contractAddress: string, address?: string | null) {
     this.contractAddress = contractAddress as `0x${string}`;
-    this.studioUrl = studioUrl;
 
     const config: any = {
-      chain: studionet,
+      chain: GENLAYER_CHAIN,
     };
 
     if (address) {
       config.account = address as `0x${string}`;
-    }
-
-    if (studioUrl) {
-      config.endpoint = studioUrl;
     }
 
     this.client = createClient(config);
@@ -44,48 +28,11 @@ class FootballBets {
    */
   updateAccount(address: string): void {
     const config: any = {
-      chain: studionet,
+      chain: GENLAYER_CHAIN,
       account: address as `0x${string}`,
     };
 
-    if (this.studioUrl) {
-      config.endpoint = this.studioUrl;
-    }
-
     this.client = createClient(config);
-  }
-
-  async estimateCreateBetFees(
-    gameDate: string,
-    team1: string,
-    team2: string,
-    predictedWinner: string,
-    level: FeePresetLevel = "standard"
-  ): Promise<FeePresetEstimate | undefined> {
-    return estimateWriteFeePreset(
-      this.client,
-      {
-        address: this.contractAddress,
-        functionName: "create_bet",
-        args: [gameDate, team1, team2, predictedWinner],
-      },
-      level,
-    );
-  }
-
-  async estimateResolveBetFees(
-    betId: string,
-    level: FeePresetLevel = "standard"
-  ): Promise<FeePresetEstimate | undefined> {
-    return estimateWriteFeePreset(
-      this.client,
-      {
-        address: this.contractAddress,
-        functionName: "resolve_bet",
-        args: [betId],
-      },
-      level,
-    );
   }
 
   /**
@@ -182,75 +129,6 @@ class FootballBets {
     }
   }
 
-  /**
-   * Create a new bet
-   * @param gameDate - Date of the game
-   * @param team1 - First team name
-   * @param team2 - Second team name
-   * @param predictedWinner - Predicted winner (team1 or team2)
-   * @returns Transaction receipt
-   */
-  async createBet(
-    gameDate: string,
-    team1: string,
-    team2: string,
-    predictedWinner: string,
-    feePreset?: FeePresetEstimate
-  ): Promise<TransactionReceipt> {
-    try {
-      const fees = feePresetToTransactionFees(feePreset);
-      const txHash = await this.client.writeContract({
-        address: this.contractAddress,
-        functionName: "create_bet",
-        args: [gameDate, team1, team2, predictedWinner],
-        value: BigInt(0),
-        ...(fees ? { fees } : {}),
-      });
-
-      const receipt = await this.client.waitForTransactionReceipt({
-        hash: txHash,
-        status: "ACCEPTED" as any,
-        retries: 24,
-        interval: 5000,
-      });
-
-      return receipt as TransactionReceipt;
-    } catch (error) {
-      console.error("Error creating bet:", error);
-      throw new Error("Failed to create bet");
-    }
-  }
-
-  /**
-   * Resolve a bet using AI-powered data fetching
-   * @param betId - ID of the bet to resolve
-   * @returns Transaction receipt
-   */
-  async resolveBet(betId: string): Promise<TransactionReceipt> {
-    try {
-      const feePreset = await this.estimateResolveBetFees(betId);
-      const fees = feePresetToTransactionFees(feePreset);
-      const txHash = await this.client.writeContract({
-        address: this.contractAddress,
-        functionName: "resolve_bet",
-        args: [betId],
-        value: BigInt(0),
-        ...(fees ? { fees } : {}),
-      });
-
-      const receipt = await this.client.waitForTransactionReceipt({
-        hash: txHash,
-        status: "ACCEPTED" as any,
-        retries: 24,
-        interval: 5000,
-      });
-
-      return receipt as TransactionReceipt;
-    } catch (error) {
-      console.error("Error resolving bet:", error);
-      throw new Error("Failed to resolve bet");
-    }
-  }
 }
 
 export default FootballBets;

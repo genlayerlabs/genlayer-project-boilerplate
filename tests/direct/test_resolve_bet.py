@@ -1,8 +1,6 @@
 """Tests for bet resolution — requires web + LLM mocks."""
 
-import json
-
-from tests.direct.conftest import to_hex
+from tests.direct.conftest import mock_json_llm, to_hex
 
 
 def _setup_match_mocks(vm, score, winner):
@@ -11,9 +9,10 @@ def _setup_match_mocks(vm, score, winner):
         r".*bbc\.com/sport/football/scores-fixtures.*",
         {"status": 200, "body": f"Match result: {score}. Winner: team {winner}."},
     )
-    vm.mock_llm(
+    mock_json_llm(
+        vm,
         r".*Extract the match result.*",
-        json.dumps({"score": score, "winner": winner}),
+        {"score": score, "winner": winner},
     )
 
 
@@ -92,6 +91,18 @@ def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
     _setup_match_mocks(direct_vm, "-", -1)
 
     with direct_vm.expect_revert("Game not finished"):
+        contract.resolve_bet("2024-06-20_spain_italy")
+
+
+def test_resolve_out_of_range_winner_fails(direct_vm, direct_deploy, direct_alice):
+    """An LLM-extracted winner outside {-1, 0, 1, 2} must be rejected, not stored."""
+    contract = direct_deploy("contracts/football_bets.py")
+    direct_vm.sender = direct_alice
+
+    contract.create_bet("2024-06-20", "Spain", "Italy", "1")
+    _setup_match_mocks(direct_vm, "9:9", 3)
+
+    with direct_vm.expect_revert("Invalid match result"):
         contract.resolve_bet("2024-06-20_spain_italy")
 
 

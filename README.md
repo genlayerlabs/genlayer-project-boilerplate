@@ -8,6 +8,11 @@
 ## About
 This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
 
+## Branching
+
+See [docs/BRANCHING.md](docs/BRANCHING.md) for the release-train model used by
+this repo.
+
 ## What's included
 - An example intelligent contract (Football Bets) with web access and LLM integration
 - **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
@@ -110,6 +115,27 @@ npm run dev
 ```
 
 The app will be available at http://localhost:3000/.
+
+### Fee profile (developer suggestions)
+
+The frontend uses published `@genlayer/transaction-kit` and
+`@genlayer/transaction-kit-react` version `0.1.0-rc.2`, with `genlayer-js`
+`2.0.0-rc.1`. Run `npm ci` from the repository root to install the locked releases.
+
+The default network is Studio Next (Consensus v0.6) at
+`https://studio-next.genlayer.com/api` (chain ID `61997`). Copy
+`frontend/.env.example`; change the RPC URL and chain ID together when targeting
+another deployment. Wallet, SDK, and Transaction Kit share this configuration.
+
+Transaction Kit uses active network fee defaults. The checked-in
+`frontend/fee-profile.json` is not wired into the application because measured
+fees are specific to a contract build, GenVM version, and network. To use a
+developer profile, regenerate it for your deployment and explicitly pass it as
+`suggestions` to `createTransactionKit` in `frontend/lib/genlayer/kit.ts`.
+
+Regenerate it with `npm run test:fees` while GenLayer Studio is running. The fee profile command estimates a trusted Studio fee preset from the active fee policy, runs the measured Football Bets deploy/create-bet scenario, and writes max-observed x 1.25 headroom as decimal strings.
+
+Missing keys, such as time-unit allocations, fall back to network defaults.
 
 ## How the Football Bets Contract Works
 

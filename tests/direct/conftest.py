@@ -1,5 +1,7 @@
 """Shared helpers for direct mode tests."""
 
+import json
+
 
 def to_hex(addr_bytes):
     """Convert address bytes to checksummed hex matching contract output.
@@ -10,6 +12,11 @@ def to_hex(addr_bytes):
     """
     if hasattr(addr_bytes, "as_hex"):
         return addr_bytes.as_hex
-    from genlayer.py.types import Address
+    from genlayer.types import Address
 
     return Address(addr_bytes).as_hex
+
+
+def mock_json_llm(vm, prompt_pattern, response):
+    """Register JSON at the direct runner's raw text response boundary."""
+    vm.mock_llm(prompt_pattern, json.dumps(json.dumps(response)))
