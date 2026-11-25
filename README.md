@@ -122,7 +122,7 @@ The app will be available at http://localhost:3000/.
 ### Fee profile (developer suggestions)
 
 The frontend uses published `@genlayer/transaction-kit` and
-`@genlayer/transaction-kit-react` version `0.1.0-rc.2`, with `genlayer-js`
+`@genlayer/transaction-kit-react` version `0.1.0-rc.3`, with `genlayer-js`
 `2.1.0`. Run `npm ci` from the repository root to install the locked releases.
 
 The default network is Studio Next (Consensus v0.6) at

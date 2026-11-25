@@ -15,8 +15,8 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@genlayer/transaction-kit": "0.1.0-rc.2",
-    "@genlayer/transaction-kit-react": "0.1.0-rc.2",
+    "@genlayer/transaction-kit": "0.1.0-rc.3",
+    "@genlayer/transaction-kit-react": "0.1.0-rc.3",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
