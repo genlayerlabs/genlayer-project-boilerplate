@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Quick Commands
 
 ```bash
+export GENVM_VERSION=v0.6.0-rc17               # GenVM of Bradbury Phase 3, used by lint and direct tests
+
 # Linting
 genvm-lint check contracts/football_bets.py    # Lint a contract
 

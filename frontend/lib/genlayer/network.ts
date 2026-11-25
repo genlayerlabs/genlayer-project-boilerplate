@@ -1,20 +1,44 @@
-import { studioDevnet } from "genlayer-js/chains";
+import { studioDevnet, testnetBradbury } from "genlayer-js/chains";
+import type { GenLayerChain } from "genlayer-js/types";
 
-// The released SDK has no Studio Next preset yet. Preserve its Consensus v0.6
-// configuration while selecting the developer-facing Studio Next deployment.
-const DEFAULT_RPC_URL = "https://studio-next.genlayer.com/api";
-const DEFAULT_CHAIN_NAME = "GenLayer Studio Next";
+// The released SDK has no Studio Next preset yet: reuse the Studio Devnet
+// consensus contracts with the developer-facing Studio Next endpoint.
+const NETWORK_PRESETS = {
+  "studio-next": {
+    base: studioDevnet,
+    chainName: "GenLayer Studio Next",
+    rpcUrl: "https://studio-next.genlayer.com/api",
+  },
+  "testnet-bradbury": {
+    base: testnetBradbury,
+    chainName: testnetBradbury.name,
+    rpcUrl: testnetBradbury.rpcUrls.default.http[0],
+  },
+} as const satisfies Record<string, { base: GenLayerChain; chainName: string; rpcUrl: string }>;
+
+export type GenLayerNetworkName = keyof typeof NETWORK_PRESETS;
 
 export interface GenLayerNetworkOverrides {
+  network?: string;
   chainId?: string;
   chainName?: string;
   rpcUrl?: string;
   symbol?: string;
 }
 
-function parseChainId(value: string | undefined): number {
+function resolvePreset(value: string | undefined) {
+  const name = value?.trim() || "studio-next";
+  if (!Object.hasOwn(NETWORK_PRESETS, name)) {
+    throw new Error(
+      `NEXT_PUBLIC_GENLAYER_NETWORK must be one of ${Object.keys(NETWORK_PRESETS).join(", ")}; received ${value}`,
+    );
+  }
+  return NETWORK_PRESETS[name as GenLayerNetworkName];
+}
+
+function parseChainId(value: string | undefined, fallback: number): number {
   if (value === undefined || value.trim() === "") {
-    return studioDevnet.id;
+    return fallback;
   }
 
   const chainId = Number(value);
@@ -33,13 +57,21 @@ function parseChainId(value: string | undefined): number {
 export function createGenLayerNetworkConfig(
   overrides: GenLayerNetworkOverrides = {},
 ) {
-  const chainId = parseChainId(overrides.chainId);
-  const chainName = overrides.chainName || DEFAULT_CHAIN_NAME;
-  const rpcUrl = overrides.rpcUrl || DEFAULT_RPC_URL;
+  const preset = resolvePreset(overrides.network);
+  const chainId = parseChainId(overrides.chainId, preset.base.id);
+  // A testnet preset's consensus contracts exist only on its own chain; a
+  // self-hosted Studio may run under any chain ID
+  if (!preset.base.isStudio && chainId !== preset.base.id) {
+    throw new Error(
+      `NEXT_PUBLIC_GENLAYER_CHAIN_ID ${chainId} does not match the ${preset.chainName} chain ID ${preset.base.id}; unset it or fix it`,
+    );
+  }
+  const chainName = overrides.chainName || preset.chainName;
+  const rpcUrl = overrides.rpcUrl || preset.rpcUrl;
   const symbol = overrides.symbol || "GEN";
 
   const chain = {
-    ...studioDevnet,
+    ...preset.base,
     id: chainId,
     name: chainName,
     nativeCurrency: {
@@ -52,7 +84,8 @@ export function createGenLayerNetworkConfig(
         http: [rpcUrl],
       },
     },
-  } satisfies typeof studioDevnet;
+  } satisfies GenLayerChain;
+  const explorerUrl = preset.base.blockExplorers?.default.url;
 
   return {
     chain,
@@ -61,12 +94,13 @@ export function createGenLayerNetworkConfig(
       chainName,
       nativeCurrency: chain.nativeCurrency,
       rpcUrls: [rpcUrl],
-      blockExplorerUrls: [],
+      blockExplorerUrls: explorerUrl ? [explorerUrl] : [],
     },
   };
 }
 
 const networkConfig = createGenLayerNetworkConfig({
+  network: process.env.NEXT_PUBLIC_GENLAYER_NETWORK,
   chainId: process.env.NEXT_PUBLIC_GENLAYER_CHAIN_ID,
   chainName: process.env.NEXT_PUBLIC_GENLAYER_CHAIN_NAME,
   rpcUrl: process.env.NEXT_PUBLIC_GENLAYER_RPC_URL,
