@@ -1,0 +1,57 @@
+name: Fast-forward main
+
+# main is the static/default branch for GitHub UX and tools that assume a
+# stable default branch. It is not the integration target. On each push to the
+# configured active dev branch, fast-forward main to that commit.
+
+on:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fast-forward-main-${{ github.repository }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  fast-forward:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fast-forward main to active dev branch
+        run: |
+          set -euo pipefail
+
+          active_branch="$(tr -d '[:space:]' < support/ci/ACTIVE_DEV_BRANCH)"
+          if [[ -z "${active_branch}" || "${active_branch}" == "main" ]]; then
+            echo "::error::support/ci/ACTIVE_DEV_BRANCH must name a non-main dev branch"
+            exit 1
+          fi
+
+          if [[ "${GITHUB_REF_NAME}" != "${active_branch}" ]]; then
+            echo "Push was to ${GITHUB_REF_NAME}; active dev branch is ${active_branch}. Nothing to do."
+            exit 0
+          fi
+
+          if git ls-remote --exit-code --heads origin main >/dev/null 2>&1; then
+            git fetch origin main
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              echo "::error::main has diverged from ${active_branch}; refusing non-fast-forward update"
+              exit 1
+            fi
+          else
+            echo "main does not exist yet; creating it at ${GITHUB_SHA}."
+          fi
+
+          git push origin "HEAD:refs/heads/main"
