@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { studioDevnet } from "genlayer-js/chains";
+import { studioDevnet, testnetBradbury } from "genlayer-js/chains";
 import {
   GENLAYER_CHAIN,
   GENLAYER_CHAIN_ID,
@@ -41,6 +41,39 @@ describe("GenLayer network configuration", () => {
       rpcUrls: [...chain.rpcUrls.default.http],
       nativeCurrency: chain.nativeCurrency,
     });
+  });
+
+  it("selects Bradbury Phase 3 with its consensus contracts", () => {
+    const { chain, wallet } = createGenLayerNetworkConfig({ network: "testnet-bradbury" });
+
+    expect(chain).toMatchObject({
+      id: testnetBradbury.id,
+      name: testnetBradbury.name,
+      rpcUrls: { default: { http: [...testnetBradbury.rpcUrls.default.http] } },
+      consensusMainContract: testnetBradbury.consensusMainContract,
+    });
+    expect(chain.consensusMainContract?.address).toBe(
+      "0x0f4F0e05475723790E4a2ed0598370783C300926",
+    );
+    expect(wallet.blockExplorerUrls).toEqual([testnetBradbury.blockExplorers?.default.url]);
+  });
+
+  it("rejects a chain ID that does not belong to a testnet preset", () => {
+    expect(() =>
+      createGenLayerNetworkConfig({ network: "testnet-bradbury", chainId: "61997" }),
+    ).toThrow(/does not match/);
+    expect(
+      createGenLayerNetworkConfig({
+        network: "testnet-bradbury",
+        chainId: String(testnetBradbury.id),
+      }).chain.id,
+    ).toBe(testnetBradbury.id);
+  });
+
+  it("rejects unknown network presets", () => {
+    expect(() => createGenLayerNetworkConfig({ network: "asimov" })).toThrow(
+      /must be one of studio-next, testnet-bradbury/,
+    );
   });
 
   it("rejects invalid chain IDs before a transaction can be signed", () => {
