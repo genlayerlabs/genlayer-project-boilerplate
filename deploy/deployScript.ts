@@ -21,17 +21,28 @@ export const isSuccessfulDeploymentReceipt = (receipt: {
   );
 };
 
+// Chains with an enabled fee policy (e.g. Bradbury) reject a deploy without explicit fees
+async function deploymentFees(client: GenLayerClient<any>) {
+  const chain = client.chain as GenLayerChain;
+  if (!chain.isStudio && !chain.feeManagerContract?.address) {
+    return undefined;
+  }
+  const estimate = await client.estimateTransactionFees();
+  return estimate.policy.enabled
+    ? { distribution: estimate.distribution, feeValue: estimate.feeValue }
+    : undefined;
+}
+
 export default async function main(client: GenLayerClient<any>) {
   const filePath = path.resolve(process.cwd(), "contracts/football_bets.py");
 
   try {
     const contractCode = new Uint8Array(readFileSync(filePath));
 
-    await client.initializeConsensusSmartContract();
-
     const deployTransaction = await client.deployContract({
       code: contractCode,
       args: [],
+      fees: await deploymentFees(client),
     });
 
     const receipt = await client.waitForTransactionReceipt({

@@ -24,7 +24,7 @@ this repo.
 
 ## Requirements
 - Python >= 3.12
-- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed: `npm install -g genlayer`
+- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed: `npm install -g genlayer` (0.40.1 or later for Bradbury Phase 3)
 - GenLayer Studio (for integration tests and deployment): Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or use the hosted [GenLayer Studio](https://studio.genlayer.com/)
 
 ## Project Structure
@@ -54,7 +54,10 @@ pyproject.toml          # Python/pytest configuration
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export GENVM_VERSION=v0.6.0-rc17
 ```
+
+`GENVM_VERSION` selects the GenVM release that the linter and direct tests run the contract on; `v0.6.0-rc17` is the one Bradbury Phase 3 runs. Without it they use the latest release they can resolve.
 
 ### 2. Lint your contracts
 
@@ -120,12 +123,12 @@ The app will be available at http://localhost:3000/.
 
 The frontend uses published `@genlayer/transaction-kit` and
 `@genlayer/transaction-kit-react` version `0.1.0-rc.2`, with `genlayer-js`
-`2.0.0-rc.1`. Run `npm ci` from the repository root to install the locked releases.
+`2.1.0`. Run `npm ci` from the repository root to install the locked releases.
 
 The default network is Studio Next (Consensus v0.6) at
 `https://studio-next.genlayer.com/api` (chain ID `61997`). Copy
-`frontend/.env.example`; change the RPC URL and chain ID together when targeting
-another deployment. Wallet, SDK, and Transaction Kit share this configuration.
+`frontend/.env.example` and set `NEXT_PUBLIC_GENLAYER_NETWORK=testnet-bradbury`
+to target Bradbury Phase 3. Wallet, SDK, and Transaction Kit share this configuration.
 
 Transaction Kit uses active network fee defaults. The checked-in
 `frontend/fee-profile.json` is not wired into the application because measured

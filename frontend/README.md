@@ -23,11 +23,13 @@ cp .env.example .env
 
 3. Configure environment variables:
    - `NEXT_PUBLIC_CONTRACT_ADDRESS` - GenLayer Football Betting contract address
-   - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer RPC URL (defaults to `https://studio-next.genlayer.com/api`)
-   - `NEXT_PUBLIC_GENLAYER_CHAIN_ID` - RPC chain ID (defaults to `61997`)
+   - `NEXT_PUBLIC_GENLAYER_NETWORK` - Network preset: `studio-next` (default) or `testnet-bradbury` (Bradbury Phase 3)
+   - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer RPC URL (defaults to the preset's endpoint)
+   - `NEXT_PUBLIC_GENLAYER_CHAIN_ID` - RPC chain ID (defaults to the preset's chain ID)
    - `NEXT_PUBLIC_GENLAYER_CHAIN_NAME` - Network label shown to users
 
-   Change the RPC URL and chain ID together. The same resolved network is used
+   The preset supplies the consensus contracts; change the RPC URL and chain ID
+   together only within the same deployment. The same resolved network is used
    by MetaMask, `genlayer-js`, and Transaction Kit.
 
 ## Development

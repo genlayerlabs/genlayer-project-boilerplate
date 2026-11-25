@@ -9,7 +9,7 @@ const lock = readJson("../../package-lock.json");
 
 describe("published GenLayer dependencies", () => {
   it.each([
-    ["genlayer-js", "2.0.0-rc.1"],
+    ["genlayer-js", "2.1.0"],
     ["@genlayer/transaction-kit", "0.1.0-rc.2"],
     ["@genlayer/transaction-kit-react", "0.1.0-rc.2"],
   ])("installs %s from npm at the qualified version", (name, version) => {

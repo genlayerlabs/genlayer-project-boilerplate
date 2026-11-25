@@ -6,6 +6,10 @@ networks:
 
   studionet: {}
 
+  testnet_bradbury: {} # Bradbury Phase 3; to send transactions, replace `{}` with funded keys:
+  #   accounts:
+  #     - "${ACCOUNT_PRIVATE_KEY_1}"
+
 paths:
   contracts: "contracts"
 
