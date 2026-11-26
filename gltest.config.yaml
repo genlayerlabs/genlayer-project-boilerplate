@@ -10,6 +10,8 @@ networks:
   #   accounts:
   #     - "${ACCOUNT_PRIVATE_KEY_1}"
 
+  testnet_clarke: {} # Clarke; needs funded keys the same way
+
 paths:
   contracts: "contracts"
 
