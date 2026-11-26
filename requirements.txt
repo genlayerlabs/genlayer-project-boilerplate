@@ -1,5 +1,5 @@
-genlayer-py==0.19.1
-genlayer-test==0.30.1
+genlayer-py==0.19.2
+genlayer-test==0.30.2
 genvm-linter==0.11.1rc2
 requests>=2.31.0
 python-dotenv>=1.0.1
