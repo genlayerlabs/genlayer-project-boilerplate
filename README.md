@@ -6,7 +6,7 @@
 [![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
 
 ## About
-This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
+This project includes two GenLayer Intelligent Contract examples: a football bets game and a minimal fungible token.
 
 ## Branching
 
@@ -15,6 +15,7 @@ this repo.
 
 ## What's included
 - An example intelligent contract (Football Bets) with web access and LLM integration
+- A minimal owner-mintable token with balance queries and direct transfers
 - **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
 - **Integration tests** — full end-to-end tests against GenLayer Studio
 - **Contract linting** — static analysis to catch common contract issues before deployment
@@ -30,12 +31,15 @@ this repo.
 ## Project Structure
 
 ```
-contracts/              # Python intelligent contracts
+contracts/
+  football_bets.py     # Football bets with web access and LLM integration
+  basic_token.py       # Owner-mintable token with direct transfers
 tests/
   direct/               # Fast in-memory tests (no Studio required)
     test_create_bet.py   # Bet creation logic
     test_resolve_bet.py  # Bet resolution with web/LLM mocks
     test_views.py        # Read-only view methods
+    test_basic_token.py  # Token supply, access control, and transfer behavior
   integration/           # Full tests against GenLayer Studio
     test_football_bets.py
     fixtures.py          # Expected state fixtures
@@ -146,6 +150,16 @@ Missing keys, such as time-unit allocations, fall back to network defaults.
 1. **Creating Bets**: Users bet on a football match by providing the game date, teams, and predicted winner.
 2. **Resolving Bets**: After the match, the contract fetches results from BBC Sport, uses an LLM to extract the score, and validates via the equivalence principle.
 3. **Points**: Correct predictions earn points. Users can query their points or the leaderboard.
+
+## Basic Token Example
+
+`contracts/basic_token.py` demonstrates an owner-mintable fungible token using GenLayer storage. The owner can mint tokens to an address, holders can transfer their balances directly, and anyone can query the owner, total supply, or an address balance. The example rejects minting or transferring to the zero address and prevents transfers that exceed the sender's balance.
+
+The contract deliberately leaves out allowances and delegated transfers to keep the example focused on supply accounting, owner-only minting, and balance changes. Its direct-mode tests run without a Studio instance:
+
+```shell
+pytest tests/direct/test_basic_token.py -v
+```
 
 ## Testing Strategy
 
