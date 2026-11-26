@@ -73,14 +73,23 @@ def test_resolve_draw_bet(direct_vm, direct_deploy, direct_alice):
 def test_resolve_already_resolved_fails(direct_vm, direct_deploy, direct_alice):
     contract = direct_deploy("contracts/football_bets.py")
     direct_vm.sender = direct_alice
+    alice = to_hex(direct_alice)
 
     contract.create_bet("2024-06-20", "Spain", "Italy", "1")
     _setup_match_mocks(direct_vm, "1:0", 1)
 
     contract.resolve_bet("2024-06-20_spain_italy")
 
+    bet_id = "2024-06-20_spain_italy"
+    bet_before_retry = contract.get_bets()[alice][bet_id]
+    points_before_retry = contract.get_player_points(alice)
+
     with direct_vm.expect_revert("Bet already resolved"):
-        contract.resolve_bet("2024-06-20_spain_italy")
+        contract.resolve_bet(bet_id)
+
+    bet_after_retry = contract.get_bets()[alice][bet_id]
+    assert bet_after_retry == bet_before_retry
+    assert contract.get_player_points(alice) == points_before_retry == 1
 
 
 def test_resolve_unfinished_game_fails(direct_vm, direct_deploy, direct_alice):
