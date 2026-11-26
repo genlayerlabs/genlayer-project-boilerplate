@@ -24,7 +24,7 @@ this repo.
 
 ## Requirements
 - Python >= 3.12
-- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed: `npm install -g genlayer` (0.40.1 or later for Bradbury Phase 3)
+- [GenLayer CLI](https://github.com/genlayerlabs/genlayer-cli) globally installed: `npm install -g genlayer` (0.40.1 or later for Bradbury Phase 3, 0.40.2 or later for Clarke)
 - GenLayer Studio (for integration tests and deployment): Install from [Docs](https://docs.genlayer.com/developers/intelligent-contracts/tooling-setup#using-the-genlayer-studio) or use the hosted [GenLayer Studio](https://studio.genlayer.com/)
 
 ## Project Structure
