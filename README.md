@@ -6,7 +6,7 @@
 [![GitHub star chart](https://img.shields.io/github/stars/yeagerai/genlayer-project-boilerplate?style=social)](https://star-history.com/#yeagerai/genlayer-js)
 
 ## About
-This project includes the boilerplate code for a GenLayer use case implementation, specifically a football bets game.
+This project includes the boilerplate code for GenLayer use cases, including a football bets game and consensus-based milestone evidence review.
 
 ## Branching
 
@@ -15,6 +15,7 @@ this repo.
 
 ## What's included
 - An example intelligent contract (Football Bets) with web access and LLM integration
+- A milestone evidence review contract that uses web access and validator consensus to assess deliverables against written criteria
 - **Direct mode tests** — fast, in-memory unit tests with web/LLM mocking (~ms per test)
 - **Integration tests** — full end-to-end tests against GenLayer Studio
 - **Contract linting** — static analysis to catch common contract issues before deployment
@@ -146,6 +147,21 @@ Missing keys, such as time-unit allocations, fall back to network defaults.
 1. **Creating Bets**: Users bet on a football match by providing the game date, teams, and predicted winner.
 2. **Resolving Bets**: After the match, the contract fetches results from BBC Sport, uses an LLM to extract the score, and validates via the equivalence principle.
 3. **Points**: Correct predictions earn points. Users can query their points or the leaderboard.
+
+## Milestone Evidence Review
+
+`contracts/milestone_review.py` demonstrates a milestone workflow where a project owner writes measurable acceptance criteria, another account submits a public HTTPS evidence URL, and anyone can trigger a GenLayer consensus review. The review fetches the page, treats its contents as untrusted evidence, and uses comparative consensus so validators independently assess the criteria and agree on an approve/reject result. The party adversely affected by the decision can submit one additional evidence URL for a single appeal and request a second consensus review.
+
+The contract records criteria, parties, evidence URLs, appeal usage, status, and the final decision. It does not hold or transfer funds: it is an adjudication primitive that an application could integrate with a separately designed escrow. The example stores only a binary decision, not free-form model explanations, so validators compare a compact result.
+
+Typical lifecycle:
+
+1. The owner calls `create_milestone(milestone_id, criteria)`.
+2. A different account calls `submit_evidence(milestone_id, evidence_url)`.
+3. Any account calls `resolve_milestone(milestone_id)` to request consensus review.
+4. If the submitter is rejected, they can appeal; if the submission is approved, the owner can appeal. The affected party can call `appeal_decision(milestone_id, additional_evidence_url)` once; anyone can then resolve the appeal.
+
+Evidence URLs must use HTTPS. Reviewers should write objective criteria and submit pages that are publicly accessible and directly relevant to the deliverable. A consensus decision is an example judgment, not a guarantee that the evidence is authentic or that a real-world payment should be made.
 
 ## Testing Strategy
 
