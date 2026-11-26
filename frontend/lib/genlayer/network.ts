@@ -1,4 +1,4 @@
-import { studioDevnet, testnetBradbury } from "genlayer-js/chains";
+import { studioDevnet, testnetBradbury, testnetClarke } from "genlayer-js/chains";
 import type { GenLayerChain } from "genlayer-js/types";
 
 // The released SDK has no Studio Next preset yet: reuse the Studio Devnet
@@ -13,6 +13,11 @@ const NETWORK_PRESETS = {
     base: testnetBradbury,
     chainName: testnetBradbury.name,
     rpcUrl: testnetBradbury.rpcUrls.default.http[0],
+  },
+  "testnet-clarke": {
+    base: testnetClarke,
+    chainName: testnetClarke.name,
+    rpcUrl: testnetClarke.rpcUrls.default.http[0],
   },
 } as const satisfies Record<string, { base: GenLayerChain; chainName: string; rpcUrl: string }>;
 

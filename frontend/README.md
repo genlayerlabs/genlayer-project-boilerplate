@@ -23,7 +23,7 @@ cp .env.example .env
 
 3. Configure environment variables:
    - `NEXT_PUBLIC_CONTRACT_ADDRESS` - GenLayer Football Betting contract address
-   - `NEXT_PUBLIC_GENLAYER_NETWORK` - Network preset: `studio-next` (default) or `testnet-bradbury` (Bradbury Phase 3)
+   - `NEXT_PUBLIC_GENLAYER_NETWORK` - Network preset: `studio-next` (default), `testnet-bradbury` (Bradbury Phase 3) or `testnet-clarke` (Clarke)
    - `NEXT_PUBLIC_GENLAYER_RPC_URL` - GenLayer RPC URL (defaults to the preset's endpoint)
    - `NEXT_PUBLIC_GENLAYER_CHAIN_ID` - RPC chain ID (defaults to the preset's chain ID)
    - `NEXT_PUBLIC_GENLAYER_CHAIN_NAME` - Network label shown to users

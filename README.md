@@ -123,12 +123,13 @@ The app will be available at http://localhost:3000/.
 
 The frontend uses published `@genlayer/transaction-kit` and
 `@genlayer/transaction-kit-react` version `0.1.0-rc.3`, with `genlayer-js`
-`2.1.0`. Run `npm ci` from the repository root to install the locked releases.
+`2.2.0`. Run `npm ci` from the repository root to install the locked releases.
 
 The default network is Studio Next (Consensus v0.6) at
 `https://studio-next.genlayer.com/api` (chain ID `61997`). Copy
 `frontend/.env.example` and set `NEXT_PUBLIC_GENLAYER_NETWORK=testnet-bradbury`
-to target Bradbury Phase 3. Wallet, SDK, and Transaction Kit share this configuration.
+to target Bradbury Phase 3, or `testnet-clarke` to target Clarke. Wallet, SDK,
+and Transaction Kit share this configuration.
 
 Transaction Kit uses active network fee defaults. The checked-in
 `frontend/fee-profile.json` is not wired into the application because measured
